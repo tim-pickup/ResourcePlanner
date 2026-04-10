@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  font-feature-settings: "cv01", "ss03";
+}
+
+body {
+  background-color: #08090a;
+  color: #f7f8f8;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.5;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f1011;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #28282c;
+  border-radius: 3px;
+}
