@@ -27,12 +27,12 @@ export default function ApprovalDetail() {
     const skill = skills.find(s => s.id === r.skillId);
     const theme = themes.find(t => t.id === skill?.themeId);
     const reqLevel = r.requiredSkillLevelId ? skillLevels.find(l => l.id === r.requiredSkillLevelId) : null;
-    return { id: r.skillId, skillName: skill?.name ?? r.skillId, themeName: theme?.name ?? '', requiredLevelLabel: reqLevel?.label };
+    return { id: r.id, skillName: r.label || skill?.name || r.skillId, themeName: theme?.name ?? '', requiredLevelLabel: reqLevel?.label };
   });
 
   const weeklyHours: Record<string, Record<string, number>> = {};
   rows.forEach(r => {
-    weeklyHours[r.skillId] = Object.fromEntries(r.weeklyHours.map(wh => [wh.weekCommencing, wh.hours]));
+    weeklyHours[r.id] = Object.fromEntries(r.weeklyHours.map(wh => [wh.weekCommencing, wh.hours]));
   });
 
   function handleApprove() {
@@ -63,7 +63,14 @@ export default function ApprovalDetail() {
             <h1 style={h1}>{project.name}</h1>
             <StatusBadge status={project.status} />
           </div>
-          <p style={sub}>{formatDateRange(project.startDate, project.endDate)} · {project.fundingType}</p>
+          <p style={sub}>
+            {formatDateRange(project.startDate, project.endDate)}
+            {project.phases.length === 1
+              ? ` · ${project.phases[0].fundingType}`
+              : project.phases.length > 1
+              ? ` · ${project.phases.length} phases`
+              : ''}
+          </p>
           {assignmentSummary.length > 0 && (
             <p style={{ fontSize: '12px', color: '#8a8f98', margin: '4px 0 0' }}>
               Assigned: {assignmentSummary.join(', ')}
@@ -101,8 +108,8 @@ export default function ApprovalDetail() {
       )}
 
       <CapacityPanel
-        skills={rows.map(r => ({ skillId: r.skillId, requiredSkillLevelId: r.requiredSkillLevelId }))}
-        weeks={weeks} demandRows={rows}
+        demandRows={rows}
+        weeks={weeks}
         engineers={engineers} skillLevels={skillLevels} assignments={assignments}
         projectId={id!}
         allSkills={skills} allThemes={themes}

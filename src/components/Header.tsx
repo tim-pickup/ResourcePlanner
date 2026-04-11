@@ -1,8 +1,8 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
   const location = useLocation();
-  const active = location.pathname === to;
+  const active = location.pathname === to || (to === '/projects' && location.pathname.startsWith('/projects'));
   return (
     <Link
       to={to}
@@ -25,14 +25,13 @@ function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
 
 const NAV_LINKS = [
   { to: '/', label: 'Dashboard' },
-  { to: '/projects/new', label: 'New Project' },
-  { to: '/review', label: 'Review Queue' },
-  { to: '/approval', label: 'Approval Queue' },
+  { to: '/projects', label: 'Projects' },
   { to: '/resource-load', label: 'Resource Load' },
   { to: '/admin', label: 'Admin' },
 ];
 
 export default function Header() {
+  const navigate = useNavigate();
   return (
     <header style={{
       position: 'sticky',
@@ -68,6 +67,17 @@ export default function Header() {
           <NavLink key={l.to} to={l.to}>{l.label}</NavLink>
         ))}
       </nav>
+
+      <button
+        onClick={() => navigate('/projects/new')}
+        style={{
+          background: '#5e6ad2', color: '#fff', border: 'none',
+          borderRadius: '6px', padding: '6px 14px', fontSize: '13px',
+          fontWeight: 510, cursor: 'pointer', whiteSpace: 'nowrap',
+        }}
+      >
+        + New Project
+      </button>
     </header>
   );
 }

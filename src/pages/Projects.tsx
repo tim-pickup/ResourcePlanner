@@ -87,7 +87,12 @@ export default function Projects() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '14px', fontWeight: 510, color: '#f7f8f8', marginBottom: '4px' }}>{p.name}</div>
                   <div style={{ fontSize: '12px', color: '#62666d' }}>
-                    {p.startDate} – {p.endDate} · {p.fundingType}
+                    {p.startDate} – {p.endDate}
+                    {p.phases.length === 1
+                      ? ` · ${p.phases[0].fundingType}`
+                      : p.phases.length > 1
+                      ? ` · ${p.phases.length} phases (${p.phases.map(ph => ph.fundingType.replace(' Funded','').replace('Group Strategy','Group')).join(', ')})`
+                      : ''}
                   </div>
                   {p.rejectionReason && (
                     <div style={{ fontSize: '12px', color: '#ef4444', marginTop: '6px' }}>

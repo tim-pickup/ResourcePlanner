@@ -1,42 +1,32 @@
 import { DemandRow, Engineer, SkillLevel, Assignment, Skill, Theme } from '../types';
 import { formatWeekLabel } from '../utils/dates';
 
-interface CapacitySkill {
-  skillId: string;
-  requiredSkillLevelId: string | null;
-}
-
 interface Props {
-  skills: CapacitySkill[];
-  weeks: string[];
   demandRows: DemandRow[];
+  weeks: string[];
   engineers: Engineer[];
   skillLevels: SkillLevel[];
-  assignments: Assignment[];   // all assignments (entire store)
-  projectId: string;           // used to filter to this project's assignments only
+  assignments: Assignment[];
+  projectId: string;
   allSkills: Skill[];
   allThemes: Theme[];
 }
 
 export default function CapacityPanel({
-  skills, weeks, demandRows, assignments, projectId, allSkills, allThemes,
+  demandRows, weeks, assignments, projectId, allSkills, allThemes,
 }: Props) {
-  if (skills.length === 0 || weeks.length === 0) return null;
+  if (demandRows.length === 0 || weeks.length === 0) return null;
 
-  // Only look at this project's assignments
   const projectAssignments = assignments.filter(a => a.projectId === projectId);
 
-  // For each (skillId, week): demand hours and assigned hours (sum across all engineers assigned to that demand row)
-  function getDemand(skillId: string, week: string): number {
-    const dr = demandRows.find(r => r.skillId === skillId);
+  function getDemand(rowId: string, week: string): number {
+    const dr = demandRows.find(r => r.id === rowId);
     return dr?.weeklyHours.find(wh => wh.weekCommencing === week)?.hours ?? 0;
   }
 
-  function getAssigned(skillId: string, week: string): number {
-    const dr = demandRows.find(r => r.skillId === skillId);
-    if (!dr) return 0;
+  function getAssigned(rowId: string, week: string): number {
     return projectAssignments
-      .filter(a => a.demandRowId === dr.id)
+      .filter(a => a.demandRowId === rowId)
       .reduce((sum, a) => {
         const wh = a.weeklyHours.find(w => w.weekCommencing === week);
         return sum + (wh?.hours ?? 0);
@@ -64,6 +54,10 @@ export default function CapacityPanel({
     empty:      'No Demand',
   };
 
+  // Only show weeks that have at least some demand
+  const activeWeeks = weeks.filter(w => demandRows.some(dr => getDemand(dr.id, w) > 0));
+  const displayWeeks = activeWeeks.length > 0 ? activeWeeks : weeks;
+
   return (
     <div style={{
       background: 'rgba(255,255,255,0.02)',
@@ -83,34 +77,36 @@ export default function CapacityPanel({
         <table style={{ borderCollapse: 'collapse', minWidth: '100%' }}>
           <thead>
             <tr>
-              <th style={th}>Skill</th>
-              {weeks.map(w => (
-                <th key={w} style={{ ...th, minWidth: '80px', textAlign: 'center' }}>
+              <th style={th}>Skill / Row</th>
+              {displayWeeks.map(w => (
+                <th key={w} style={{ ...th, minWidth: '72px', textAlign: 'center' }}>
                   {formatWeekLabel(w)}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {skills.map(sk => {
-              const skill = allSkills.find(s => s.id === sk.skillId);
+            {demandRows.map(dr => {
+              const skill = allSkills.find(s => s.id === dr.skillId);
               const theme = allThemes.find(t => t.id === skill?.themeId);
-              const totalDemand = weeks.reduce((s, w) => s + getDemand(sk.skillId, w), 0);
-              const totalAssigned = weeks.reduce((s, w) => s + getAssigned(sk.skillId, w), 0);
+              const totalDemand = displayWeeks.reduce((s, w) => s + getDemand(dr.id, w), 0);
+              const totalAssigned = displayWeeks.reduce((s, w) => s + getAssigned(dr.id, w), 0);
               const totalGap = Math.max(0, totalDemand - totalAssigned);
 
               return (
-                <tr key={sk.skillId}>
+                <tr key={dr.id}>
                   <td style={{ ...td, minWidth: '160px' }}>
-                    <div style={{ fontWeight: 510, color: '#d0d6e0', fontSize: '13px' }}>{skill?.name ?? sk.skillId}</div>
+                    <div style={{ fontWeight: 510, color: '#d0d6e0', fontSize: '13px' }}>
+                      {dr.label || skill?.name || dr.skillId}
+                    </div>
                     <div style={{ fontSize: '11px', color: '#62666d' }}>{theme?.name}</div>
                     <div style={{ fontSize: '10px', marginTop: '3px', color: totalGap > 0 ? '#f59e0b' : '#27a644' }}>
-                      {totalGap > 0 ? `${totalGap}h gap remaining` : 'Fully covered'}
+                      {totalDemand === 0 ? 'No demand' : totalGap > 0 ? `${totalGap}h gap remaining` : 'Fully covered'}
                     </div>
                   </td>
-                  {weeks.map(w => {
-                    const demand = getDemand(sk.skillId, w);
-                    const assigned = getAssigned(sk.skillId, w);
+                  {displayWeeks.map(w => {
+                    const demand = getDemand(dr.id, w);
+                    const assigned = getAssigned(dr.id, w);
                     const gap = Math.max(0, demand - assigned);
                     const status = getStatus(demand, assigned);
                     const color = STATUS_COLOR[status];
@@ -141,7 +137,6 @@ export default function CapacityPanel({
           </tbody>
         </table>
 
-        {/* Legend */}
         <div style={{ display: 'flex', gap: '16px', marginTop: '10px', paddingTop: '8px',
           borderTop: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap' }}>
           {([

@@ -119,6 +119,6 @@ export const useStore = create<StoreState>()(
         skillLevels: s.skillLevels.map(l => l.id === id ? { ...l, ...updates } : l),
       })),
     }),
-    { name: 'resource-planner-v2' }
+    { name: 'resource-planner-v3' }
   )
 );

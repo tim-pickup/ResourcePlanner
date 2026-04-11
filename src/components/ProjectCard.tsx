@@ -52,7 +52,11 @@ export default function ProjectCard({ project, onClick, extra }: Props) {
           )}
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
             <Meta label="Dates" value={formatDateRange(project.startDate, project.endDate)} />
-            <Meta label="Funding" value={project.fundingType} />
+            <Meta label="Phases" value={
+              project.phases.length === 0 ? 'No phases'
+              : project.phases.length === 1 ? project.phases[0].fundingType
+              : `${project.phases.length} phases`
+            } />
             <Meta label="Total Hours" value={`${totalHours}h`} />
           </div>
         </div>

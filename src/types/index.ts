@@ -6,7 +6,7 @@ export type ProjectStatus =
   | 'approved'
   | 'rejected';
 
-export type FundingType = 'Group Strategy Funded' | 'Business Funded';
+export type FundingType = 'Group Strategy Funded' | 'Sector Funded' | 'Business Funded';
 export type AssignmentStatus = 'tentative' | 'locked';
 export type UserRole =
   | 'project_lead'
@@ -52,10 +52,20 @@ export interface WeeklyHours {
   hours: number;
 }
 
+export interface ProjectPhase {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  fundingType: FundingType;
+}
+
 export interface DemandRow {
   id: string;
   projectId: string;
+  phaseId: string;
   skillId: string;
+  label?: string;
   requiredSkillLevelId: string | null;
   weeklyHours: WeeklyHours[];
 }
@@ -75,7 +85,7 @@ export interface Project {
   description: string;
   startDate: string;
   endDate: string;
-  fundingType: FundingType;
+  phases: ProjectPhase[];
   createdByUserId: string;
   status: ProjectStatus;
   rejectionReason: string;
