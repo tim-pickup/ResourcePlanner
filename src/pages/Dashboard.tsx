@@ -1,24 +1,102 @@
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
-import ProjectCard from '../components/ProjectCard';
 import { ProjectStatus } from '../types';
+import { formatWeekLabel } from '../utils/dates';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const STATUS_ORDER: ProjectStatus[] = ['draft','submitted','under_review','pending_approval','approved','rejected'];
 
-function StatCard({ label, count, color }: { label: string; count: number; color: string }) {
+const STATUS_META: Record<ProjectStatus, { label: string; color: string }> = {
+  draft:            { label: 'Draft',            color: '#62666d' },
+  submitted:        { label: 'Submitted',        color: '#5e6ad2' },
+  under_review:     { label: 'Under Review',     color: '#f59e0b' },
+  pending_approval: { label: 'Pending Approval', color: '#a855f7' },
+  approved:         { label: 'Approved',         color: '#27a644' },
+  rejected:         { label: 'Rejected',         color: '#ef4444' },
+};
+
+function StatCard({ status, count }: { status: ProjectStatus; count: number }) {
+  const navigate = useNavigate();
+  const { label, color } = STATUS_META[status];
   return (
-    <div style={{
-      background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: '8px', padding: '16px 20px',
-    }}>
+    <button
+      onClick={() => navigate(`/projects?status=${status}`)}
+      style={{
+        background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: '8px', padding: '16px 20px', cursor: 'pointer', textAlign: 'left',
+        transition: 'border-color 0.15s, background 0.15s',
+      }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+        (e.currentTarget as HTMLElement).style.borderColor = color + '55';
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)';
+        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+      }}
+    >
       <div style={{ fontSize: '28px', fontWeight: 590, color, letterSpacing: '-0.05em' }}>{count}</div>
       <div style={{ fontSize: '12px', color: '#8a8f98', fontWeight: 510, marginTop: '2px' }}>{label}</div>
+    </button>
+  );
+}
+
+const CUSTOM_TOOLTIP_STYLE = {
+  background: '#191a1b',
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: '6px',
+  fontSize: '12px',
+  color: '#d0d6e0',
+};
+
+function CapacityDemandChart() {
+  const { engineers, demandRows } = useStore();
+
+  const totalCapacity = engineers.reduce((s, e) => s + (e.isActive ? e.weeklyCapacityHours : 0), 0);
+
+  // Collect all unique weeks from demand rows, sorted
+  const weekSet = new Set<string>();
+  demandRows.forEach(r => r.weeklyHours.forEach(wh => weekSet.add(wh.weekCommencing)));
+  const weeks = [...weekSet].sort();
+
+  if (weeks.length === 0) return null;
+
+  const data = weeks.map(w => {
+    const demand = demandRows.reduce((s, r) => {
+      const wh = r.weeklyHours.find(h => h.weekCommencing === w);
+      return s + (wh?.hours ?? 0);
+    }, 0);
+    return { week: formatWeekLabel(w), capacity: totalCapacity, demand };
+  });
+
+  return (
+    <div style={{ marginBottom: '32px' }}>
+      <h2 style={sectionHead}>Capacity vs Demand Over Time</h2>
+      <div style={{
+        background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: '8px', padding: '16px',
+      }}>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={data} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+            <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#62666d' }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+            <YAxis tick={{ fontSize: 10, fill: '#62666d' }} tickLine={false} axisLine={false} />
+            <Tooltip
+              contentStyle={CUSTOM_TOOLTIP_STYLE}
+              labelStyle={{ color: '#8a8f98', marginBottom: '4px' }}
+              cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+            />
+            <Legend wrapperStyle={{ fontSize: '11px', color: '#8a8f98', paddingTop: '8px' }} />
+            <Bar dataKey="capacity" name="Team Capacity (h)" fill="#5e6ad255" radius={[2,2,0,0]} />
+            <Bar dataKey="demand" name="Total Demand (h)" fill="#f59e0b" radius={[2,2,0,0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
 
 export default function Dashboard() {
-  const { projects, currentRole, currentUserId } = useStore();
+  const { projects } = useStore();
   const navigate = useNavigate();
 
   const counts: Record<ProjectStatus, number> = STATUS_ORDER.reduce((acc, s) => {
@@ -28,13 +106,11 @@ export default function Dashboard() {
 
   const recent = [...projects]
     .sort((a, b) => (b.submittedAt ?? '').localeCompare(a.submittedAt ?? ''))
-    .slice(0, 5);
-
-  const myProjects = projects.filter(p => p.createdByUserId === currentUserId).slice(0, 3);
+    .slice(0, 6);
 
   return (
     <div>
-      <div style={{ marginBottom: '32px' }}>
+      <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 590, color: '#f7f8f8', letterSpacing: '-0.03em', margin: 0 }}>
           Dashboard
         </h1>
@@ -43,63 +119,63 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '32px' }}>
-        <StatCard label="Draft" count={counts.draft} color="#62666d" />
-        <StatCard label="Submitted" count={counts.submitted} color="#5e6ad2" />
-        <StatCard label="Under Review" count={counts.under_review} color="#f59e0b" />
-        <StatCard label="Pending Approval" count={counts.pending_approval} color="#a855f7" />
-        <StatCard label="Approved" count={counts.approved} color="#27a644" />
-        <StatCard label="Rejected" count={counts.rejected} color="#ef4444" />
+      {/* Stats — click to drill in */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+        {STATUS_ORDER.map(s => <StatCard key={s} status={s} count={counts[s]} />)}
       </div>
+      <p style={{ fontSize: '11px', color: '#62666d', marginBottom: '32px', marginTop: '-16px' }}>
+        Click a counter to see the projects in that state
+      </p>
+
+      {/* Capacity vs Demand chart */}
+      <CapacityDemandChart />
 
       {/* Quick actions */}
       <div style={{ marginBottom: '32px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        {(currentRole === 'project_lead' || currentRole === 'resource_manager') && (
-          <button onClick={() => navigate('/projects/new')} style={primaryBtn}>
-            + New Project
-          </button>
-        )}
-        {(currentRole === 'resource_manager' || currentRole === 'pmo_admin') && (
-          <button onClick={() => navigate('/review')} style={ghostBtn}>
-            Review Queue ({counts.submitted + counts.under_review})
-          </button>
-        )}
-        {currentRole === 'prioritisation_board' && (
-          <button onClick={() => navigate('/approval')} style={primaryBtn}>
-            Approval Queue ({counts.pending_approval})
-          </button>
-        )}
-        {currentRole === 'pmo_admin' && (
-          <button onClick={() => navigate('/admin')} style={ghostBtn}>
-            Admin Configuration
-          </button>
-        )}
+        <button onClick={() => navigate('/projects/new')} style={primaryBtn}>+ New Project</button>
+        <button onClick={() => navigate('/review')} style={ghostBtn}>
+          Review Queue ({counts.submitted + counts.under_review})
+        </button>
+        <button onClick={() => navigate('/approval')} style={ghostBtn}>
+          Approval Queue ({counts.pending_approval})
+        </button>
+        <button onClick={() => navigate('/resource-load')} style={ghostBtn}>Resource Load</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-        {/* My projects */}
-        {myProjects.length > 0 && (
-          <div>
-            <h2 style={sectionHead}>My Projects</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {myProjects.map(p => (
-                <ProjectCard key={p.id} project={p} onClick={() => navigate(`/my-projects`)} />
-              ))}
+      {/* Recent */}
+      <div>
+        <h2 style={sectionHead}>Recent Projects</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '10px' }}>
+          {recent.map(p => (
+            <div
+              key={p.id}
+              style={{
+                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '8px', padding: '12px 16px', cursor: 'pointer',
+              }}
+              onClick={() => {
+                if (p.status === 'submitted' || p.status === 'under_review') navigate(`/review/${p.id}`);
+                else if (p.status === 'pending_approval') navigate(`/approval/${p.id}`);
+                else navigate(`/projects?status=${p.status}`);
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 510, color: '#d0d6e0' }}>{p.name}</span>
+                <span style={{
+                  fontSize: '10px', fontWeight: 590, padding: '2px 6px', borderRadius: '4px',
+                  background: STATUS_META[p.status].color + '22',
+                  color: STATUS_META[p.status].color,
+                  whiteSpace: 'nowrap',
+                }}>
+                  {STATUS_META[p.status].label}
+                </span>
+              </div>
+              <div style={{ fontSize: '11px', color: '#62666d', marginTop: '4px' }}>{p.fundingType}</div>
             </div>
-          </div>
-        )}
-        {/* Recent activity */}
-        <div>
-          <h2 style={sectionHead}>Recent Projects</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {recent.map(p => (
-              <ProjectCard key={p.id} project={p} />
-            ))}
-            {recent.length === 0 && (
-              <p style={{ color: '#62666d', fontSize: '14px' }}>No projects yet.</p>
-            )}
-          </div>
+          ))}
+          {recent.length === 0 && (
+            <p style={{ color: '#62666d', fontSize: '14px' }}>No projects yet.</p>
+          )}
         </div>
       </div>
     </div>
@@ -111,14 +187,12 @@ const primaryBtn: React.CSSProperties = {
   borderRadius: '6px', padding: '8px 16px', fontSize: '13px',
   fontWeight: 510, cursor: 'pointer',
 };
-
 const ghostBtn: React.CSSProperties = {
   background: 'rgba(255,255,255,0.04)', color: '#d0d6e0',
   border: '1px solid rgba(255,255,255,0.08)',
   borderRadius: '6px', padding: '8px 16px', fontSize: '13px',
   fontWeight: 510, cursor: 'pointer',
 };
-
 const sectionHead: React.CSSProperties = {
   fontSize: '13px', fontWeight: 590, color: '#8a8f98',
   letterSpacing: '0.05em', textTransform: 'uppercase',

@@ -104,6 +104,7 @@ export default function ApprovalDetail() {
         skills={rows.map(r => ({ skillId: r.skillId, requiredSkillLevelId: r.requiredSkillLevelId }))}
         weeks={weeks} demandRows={rows}
         engineers={engineers} skillLevels={skillLevels} assignments={assignments}
+        projectId={id!}
         allSkills={skills} allThemes={themes}
       />
 

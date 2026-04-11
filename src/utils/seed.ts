@@ -51,6 +51,7 @@ export const SEED_ENGINEERS: Engineer[] = [
     skills: [
       { skillId: 'skill-s7', skillLevelId: 'sl-basic' },
       { skillId: 'skill-api', skillLevelId: 'sl-advanced' },
+      { skillId: 'skill-opc', skillLevelId: 'sl-basic' },
     ],
   },
   {
@@ -85,11 +86,39 @@ function wh(weeks: string[], hours: number) {
   return weeks.map(w => ({ weekCommencing: w, hours }));
 }
 
+// Week ranges for seed data
 const W8_JAN = ['2026-01-05','2026-01-12','2026-01-19','2026-01-26','2026-02-02','2026-02-09','2026-02-16','2026-02-23'];
 const W8_FEB = ['2026-02-02','2026-02-09','2026-02-16','2026-02-23','2026-03-02','2026-03-09','2026-03-16','2026-03-23'];
-const W8_MAR = ['2026-03-02','2026-03-09','2026-03-16','2026-03-23','2026-03-30','2026-04-06','2026-04-13','2026-04-20'];
 const W8_APR = ['2026-04-06','2026-04-13','2026-04-20','2026-04-27','2026-05-04','2026-05-11','2026-05-18','2026-05-25'];
 const W8_MAY = ['2026-05-04','2026-05-11','2026-05-18','2026-05-25','2026-06-01','2026-06-08','2026-06-15','2026-06-22'];
+
+// proj-3 SCADA: Mar–May (12 weeks, currently in progress)
+const W12_MAR_MAY = [
+  '2026-03-02','2026-03-09','2026-03-16','2026-03-23','2026-03-30',
+  '2026-04-06','2026-04-13','2026-04-20','2026-04-27',
+  '2026-05-04','2026-05-11','2026-05-18',
+];
+
+// proj-6 Azure IoT: Apr–Jul (16 weeks, approved long-runner)
+const W16_APR_JUL = [
+  '2026-04-06','2026-04-13','2026-04-20','2026-04-27',
+  '2026-05-04','2026-05-11','2026-05-18','2026-05-25',
+  '2026-06-01','2026-06-08','2026-06-15','2026-06-22',
+  '2026-07-06','2026-07-13','2026-07-20','2026-07-27',
+];
+
+// proj-7 OPC UA: Feb–Apr (8 weeks, rejected)
+const W8_FEB_MAR = [
+  '2026-02-16','2026-02-23','2026-03-02','2026-03-09',
+  '2026-03-16','2026-03-23','2026-03-30','2026-04-06',
+];
+
+// proj-8 SQL Analytics: Apr–Jun (11 weeks, submitted)
+const W11_APR_JUN = [
+  '2026-04-13','2026-04-20','2026-04-27',
+  '2026-05-04','2026-05-11','2026-05-18','2026-05-25',
+  '2026-06-01','2026-06-08','2026-06-15','2026-06-22',
+];
 
 export const SEED_PROJECTS: Project[] = [
   {
@@ -109,7 +138,7 @@ export const SEED_PROJECTS: Project[] = [
   {
     id: 'proj-3', name: 'SCADA System Integration',
     description: 'Integrate new SCADA system with existing MES infrastructure across Lines 1–4.',
-    startDate: '2026-03-02', endDate: '2026-04-24',
+    startDate: '2026-03-02', endDate: '2026-05-22',
     fundingType: 'Business Funded', createdByUserId: 'user-1',
     status: 'under_review', rejectionReason: '', submittedAt: '2026-02-15T10:00:00.000Z',
   },
@@ -127,25 +156,69 @@ export const SEED_PROJECTS: Project[] = [
     fundingType: 'Group Strategy Funded', createdByUserId: 'user-1',
     status: 'approved', rejectionReason: '', submittedAt: '2025-12-20T09:00:00.000Z',
   },
+  {
+    id: 'proj-6', name: 'Azure IoT Connectivity Suite',
+    description: 'Deploy Azure IoT hub and OPC UA gateway across all manufacturing lines enabling real-time telemetry and edge analytics. Full team commitment required Apr–Jul.',
+    startDate: '2026-04-06', endDate: '2026-07-31',
+    fundingType: 'Group Strategy Funded', createdByUserId: 'user-1',
+    status: 'approved', rejectionReason: '', submittedAt: '2026-03-01T09:00:00.000Z',
+  },
+  {
+    id: 'proj-7', name: 'OPC UA Legacy Migration',
+    description: 'Migrate legacy proprietary protocols to OPC UA standard across lines 5–8.',
+    startDate: '2026-02-16', endDate: '2026-04-03',
+    fundingType: 'Business Funded', createdByUserId: 'user-1',
+    status: 'rejected', rejectionReason: 'Insufficient OPC UA engineering capacity in the target window. Emma and Frank are already committed to Azure IoT. Recommend deferring to Q3 2026.', submittedAt: '2026-02-01T10:00:00.000Z',
+  },
+  {
+    id: 'proj-8', name: 'SQL Analytics & Reporting Hub',
+    description: 'Build centralised SQL analytics layer for production and quality reporting across all sites, including Power BI integration.',
+    startDate: '2026-04-13', endDate: '2026-06-26',
+    fundingType: 'Business Funded', createdByUserId: 'user-1',
+    status: 'submitted', rejectionReason: '', submittedAt: '2026-04-05T14:00:00.000Z',
+  },
 ];
 
 export const SEED_DEMAND_ROWS: DemandRow[] = [
+  // proj-1: draft (May–Jun)
   { id: 'dr-1-1', projectId: 'proj-1', skillId: 'skill-s7', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W8_MAY, 20) },
   { id: 'dr-1-2', projectId: 'proj-1', skillId: 'skill-plc', requiredSkillLevelId: null, weeklyHours: wh(W8_MAY, 16) },
+  // proj-2: submitted (Apr–May)
   { id: 'dr-2-1', projectId: 'proj-2', skillId: 'skill-pbi', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W8_APR, 24) },
   { id: 'dr-2-2', projectId: 'proj-2', skillId: 'skill-api', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W8_APR, 16) },
-  { id: 'dr-3-1', projectId: 'proj-3', skillId: 'skill-scada', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W8_MAR, 24) },
-  { id: 'dr-3-2', projectId: 'proj-3', skillId: 'skill-mes', requiredSkillLevelId: null, weeklyHours: wh(W8_MAR, 16) },
+  // proj-3: under_review (Mar–May, extended)
+  { id: 'dr-3-1', projectId: 'proj-3', skillId: 'skill-scada', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W12_MAR_MAY, 24) },
+  { id: 'dr-3-2', projectId: 'proj-3', skillId: 'skill-mes', requiredSkillLevelId: null, weeklyHours: wh(W12_MAR_MAY, 16) },
+  // proj-4: pending_approval (Feb–Mar)
   { id: 'dr-4-1', projectId: 'proj-4', skillId: 'skill-pbi', requiredSkillLevelId: 'sl-specialist', weeklyHours: wh(W8_FEB, 24) },
   { id: 'dr-4-2', projectId: 'proj-4', skillId: 'skill-dm', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W8_FEB, 20) },
+  // proj-5: approved (Jan–Feb)
   { id: 'dr-5-1', projectId: 'proj-5', skillId: 'skill-plc', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W8_JAN, 16) },
   { id: 'dr-5-2', projectId: 'proj-5', skillId: 'skill-s7', requiredSkillLevelId: 'sl-basic', weeklyHours: wh(W8_JAN, 8) },
+  // proj-6: approved (Apr–Jul, 16 weeks — heavy commitment)
+  { id: 'dr-6-1', projectId: 'proj-6', skillId: 'skill-iot', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W16_APR_JUL, 32) },
+  { id: 'dr-6-2', projectId: 'proj-6', skillId: 'skill-opc', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W16_APR_JUL, 24) },
+  // proj-7: rejected (Feb–Apr)
+  { id: 'dr-7-1', projectId: 'proj-7', skillId: 'skill-opc', requiredSkillLevelId: 'sl-specialist', weeklyHours: wh(W8_FEB_MAR, 24) },
+  { id: 'dr-7-2', projectId: 'proj-7', skillId: 'skill-plc', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W8_FEB_MAR, 16) },
+  // proj-8: submitted (Apr–Jun)
+  { id: 'dr-8-1', projectId: 'proj-8', skillId: 'skill-sql', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W11_APR_JUN, 24) },
+  { id: 'dr-8-2', projectId: 'proj-8', skillId: 'skill-pbi', requiredSkillLevelId: null, weeklyHours: wh(W11_APR_JUN, 16) },
 ];
 
 export const SEED_ASSIGNMENTS: Assignment[] = [
-  { id: 'asgn-3-1', projectId: 'proj-3', demandRowId: 'dr-3-1', engineerId: 'eng-bob', status: 'tentative', weeklyHours: wh(W8_MAR, 24) },
+  // proj-3: under_review — Bob covers SCADA (tentative)
+  { id: 'asgn-3-1', projectId: 'proj-3', demandRowId: 'dr-3-1', engineerId: 'eng-bob', status: 'tentative', weeklyHours: wh(W12_MAR_MAY, 24) },
+  // proj-4: pending_approval — David covers both skills (tentative, fully committed in Feb–Mar)
   { id: 'asgn-4-1', projectId: 'proj-4', demandRowId: 'dr-4-1', engineerId: 'eng-david', status: 'tentative', weeklyHours: wh(W8_FEB, 24) },
   { id: 'asgn-4-2', projectId: 'proj-4', demandRowId: 'dr-4-2', engineerId: 'eng-david', status: 'tentative', weeklyHours: wh(W8_FEB, 16) },
+  // proj-5: approved — locked assignments (completed Jan–Feb)
   { id: 'asgn-5-1', projectId: 'proj-5', demandRowId: 'dr-5-1', engineerId: 'eng-frank', status: 'locked', weeklyHours: wh(W8_JAN, 16) },
   { id: 'asgn-5-2', projectId: 'proj-5', demandRowId: 'dr-5-2', engineerId: 'eng-alice', status: 'locked', weeklyHours: wh(W8_JAN, 8) },
+  // proj-6: approved — Emma (IoT 32h) + Frank (OPC 24h) locked Apr–Jul, near full capacity
+  { id: 'asgn-6-1', projectId: 'proj-6', demandRowId: 'dr-6-1', engineerId: 'eng-emma', status: 'locked', weeklyHours: wh(W16_APR_JUL, 32) },
+  { id: 'asgn-6-2', projectId: 'proj-6', demandRowId: 'dr-6-2', engineerId: 'eng-frank', status: 'locked', weeklyHours: wh(W16_APR_JUL, 24) },
+  // proj-2: submitted — David tentative on PBI, Carol tentative on API
+  { id: 'asgn-2-1', projectId: 'proj-2', demandRowId: 'dr-2-1', engineerId: 'eng-david', status: 'tentative', weeklyHours: wh(W8_APR, 24) },
+  { id: 'asgn-2-2', projectId: 'proj-2', demandRowId: 'dr-2-2', engineerId: 'eng-carol', status: 'tentative', weeklyHours: wh(W8_APR, 16) },
 ];

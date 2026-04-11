@@ -4,12 +4,13 @@ import { useStore } from './store';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import NewProject from './pages/NewProject';
-import MyProjects from './pages/MyProjects';
+import Projects from './pages/Projects';
 import Review from './pages/Review';
 import ReviewDetail from './pages/ReviewDetail';
 import Approval from './pages/Approval';
 import ApprovalDetail from './pages/ApprovalDetail';
 import Admin from './pages/Admin';
+import ResourceLoad from './pages/ResourceLoad';
 
 function AppInit() {
   const { projects, seedData } = useStore();
@@ -27,12 +28,13 @@ export default function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="projects/new" element={<NewProject />} />
-          <Route path="my-projects" element={<MyProjects />} />
+          <Route path="projects" element={<Projects />} />
           <Route path="review" element={<Review />} />
           <Route path="review/:id" element={<ReviewDetail />} />
           <Route path="approval" element={<Approval />} />
           <Route path="approval/:id" element={<ApprovalDetail />} />
           <Route path="admin" element={<Admin />} />
+          <Route path="resource-load" element={<ResourceLoad />} />
         </Route>
       </Routes>
     </HashRouter>

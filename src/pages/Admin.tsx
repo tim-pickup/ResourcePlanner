@@ -6,12 +6,7 @@ import { Engineer } from '../types';
 type Tab = 'themes' | 'skills' | 'engineers' | 'levels';
 
 export default function Admin() {
-  const { currentRole } = useStore();
   const [tab, setTab] = useState<Tab>('themes');
-
-  if (currentRole !== 'pmo_admin') {
-    return <div style={{ color: '#ef4444', padding: '32px', fontSize: '14px' }}>Access restricted to PMO Admin role.</div>;
-  }
 
   return (
     <div>
@@ -19,7 +14,7 @@ export default function Admin() {
         <h1 style={h1}>Admin Configuration</h1>
         <p style={sub}>Manage themes, skills, engineers, and skill levels.</p>
       </div>
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0' }}>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         {(['themes', 'skills', 'engineers', 'levels'] as Tab[]).map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
             background: 'none', border: 'none', borderBottom: `2px solid ${tab === t ? '#7170ff' : 'transparent'}`,
@@ -134,8 +129,121 @@ function SkillsTab() {
   );
 }
 
+// Engineer form with theme-correlated skill selection
+function EngineerSkillEditor({
+  formData,
+  setFormData,
+}: {
+  formData: Partial<Engineer>;
+  setFormData: React.Dispatch<React.SetStateAction<Partial<Engineer>>>;
+}) {
+  const { themes, skills, skillLevels } = useStore();
+  const activeThemes = themes.filter(t => t.isActive);
+  const [selectedThemeId, setSelectedThemeId] = useState(activeThemes[0]?.id ?? '');
+
+  function toggleTheme(themeId: string) {
+    const ids = formData.themeIds ?? [];
+    setFormData(f => ({ ...f, themeIds: ids.includes(themeId) ? ids.filter(t => t !== themeId) : [...ids, themeId] }));
+  }
+
+  function setSkillLevel(skillId: string, levelId: string) {
+    const cur = formData.skills ?? [];
+    const exists = cur.find(s => s.skillId === skillId);
+    const updated = exists
+      ? cur.map(s => s.skillId === skillId ? { ...s, skillLevelId: levelId } : s)
+      : [...cur, { skillId, skillLevelId: levelId }];
+    setFormData(f => ({
+      ...f,
+      skills: levelId ? updated : cur.filter(s => s.skillId !== skillId),
+    }));
+  }
+
+  const themeSkills = skills.filter(s => s.themeId === selectedThemeId && s.isActive);
+
+  return (
+    <>
+      {/* Themes (checkbox) */}
+      <div style={{ marginBottom: '12px' }}>
+        <label style={fieldLabel}>Themes</label>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {activeThemes.map(t => (
+            <label key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: '#d0d6e0', cursor: 'pointer' }}>
+              <input type="checkbox" checked={(formData.themeIds ?? []).includes(t.id)} onChange={() => toggleTheme(t.id)} style={{ accentColor: '#5e6ad2' }} />
+              {t.name}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Theme-scoped skill proficiencies */}
+      <div style={{ marginBottom: '12px' }}>
+        <label style={fieldLabel}>Skill Proficiencies</label>
+        <p style={{ fontSize: '11px', color: '#62666d', margin: '0 0 8px' }}>
+          Select a theme below, then set proficiency levels for its skills.
+        </p>
+
+        {/* Theme tabs */}
+        <div style={{ display: 'flex', gap: '4px', marginBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0' }}>
+          {activeThemes.map(t => {
+            const assignedCount = skills.filter(s => s.themeId === t.id && s.isActive).filter(s => formData.skills?.some(es => es.skillId === s.id)).length;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setSelectedThemeId(t.id)}
+                style={{
+                  background: 'none', border: 'none',
+                  borderBottom: `2px solid ${selectedThemeId === t.id ? '#7170ff' : 'transparent'}`,
+                  color: selectedThemeId === t.id ? '#f7f8f8' : '#8a8f98',
+                  fontSize: '12px', fontWeight: 510,
+                  padding: '6px 12px', cursor: 'pointer', marginBottom: '-1px',
+                }}
+              >
+                {t.name}
+                {assignedCount > 0 && (
+                  <span style={{ marginLeft: '5px', fontSize: '10px', color: '#5e6ad2', background: 'rgba(94,106,210,0.15)', padding: '1px 5px', borderRadius: '8px' }}>
+                    {assignedCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {themeSkills.length === 0 ? (
+          <div style={{ fontSize: '12px', color: '#62666d' }}>No active skills in this theme.</div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '6px' }}>
+            {themeSkills.map(sk => {
+              const assigned = formData.skills?.find(e => e.skillId === sk.id);
+              return (
+                <div key={sk.id} style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '7px 10px',
+                  background: assigned ? 'rgba(94,106,210,0.08)' : 'rgba(255,255,255,0.02)',
+                  borderRadius: '5px',
+                  border: assigned ? '1px solid rgba(94,106,210,0.25)' : '1px solid rgba(255,255,255,0.05)',
+                }}>
+                  <span style={{ fontSize: '12px', color: '#d0d6e0', flex: 1 }}>{sk.name}</span>
+                  <select
+                    value={assigned?.skillLevelId ?? ''}
+                    onChange={e => setSkillLevel(sk.id, e.target.value)}
+                    style={{ background: '#191a1b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '4px', color: '#8a8f98', fontSize: '11px', padding: '2px 4px' }}
+                  >
+                    <option value="">—</option>
+                    {skillLevels.sort((a, b) => a.rank - b.rank).map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
+                  </select>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 function EngineersTab() {
-  const { engineers, themes, skills, skillLevels, addEngineer, updateEngineer } = useStore();
+  const { engineers, addEngineer, updateEngineer } = useStore();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newMode, setNewMode] = useState(false);
   const blankEng: Partial<Engineer> = { name: '', weeklyCapacityHours: 40, isActive: true, themeIds: [], skills: [] };
@@ -159,20 +267,6 @@ function EngineersTab() {
     setFormData({ ...eng });
   }
 
-  function toggleTheme(themeId: string) {
-    const ids = formData.themeIds ?? [];
-    setFormData(f => ({ ...f, themeIds: ids.includes(themeId) ? ids.filter(t => t !== themeId) : [...ids, themeId] }));
-  }
-
-  function setSkillLevel(skillId: string, levelId: string) {
-    const cur = formData.skills ?? [];
-    const exists = cur.find(s => s.skillId === skillId);
-    const updated = exists
-      ? cur.map(s => s.skillId === skillId ? { ...s, skillLevelId: levelId } : s)
-      : [...cur, { skillId, skillLevelId: levelId }];
-    setFormData(f => ({ ...f, skills: levelId ? updated : updated.filter(s => s.skillId !== skillId) }));
-  }
-
   const engineerForm = (
     <div style={{ marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
@@ -186,39 +280,9 @@ function EngineersTab() {
             onChange={e => setFormData(f => ({ ...f, weeklyCapacityHours: parseInt(e.target.value) || 40 }))} style={inlineInput} />
         </div>
       </div>
-      <div style={{ marginBottom: '12px' }}>
-        <label style={fieldLabel}>Themes</label>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {themes.filter(t => t.isActive).map(t => (
-            <label key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: '#d0d6e0', cursor: 'pointer' }}>
-              <input type="checkbox" checked={(formData.themeIds ?? []).includes(t.id)} onChange={() => toggleTheme(t.id)} style={{ accentColor: '#5e6ad2' }} />
-              {t.name}
-            </label>
-          ))}
-        </div>
-      </div>
-      <div style={{ marginBottom: '12px' }}>
-        <label style={fieldLabel}>Skill Proficiencies</label>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '6px' }}>
-          {skills.filter(s => s.isActive).map(sk => {
-            const assigned = formData.skills?.find(e => e.skillId === sk.id);
-            return (
-              <div key={sk.id} style={{ display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '5px 8px', background: 'rgba(255,255,255,0.02)', borderRadius: '4px',
-                border: '1px solid rgba(255,255,255,0.05)' }}>
-                <span style={{ fontSize: '12px', color: '#d0d6e0', flex: 1 }}>{sk.name}</span>
-                <select value={assigned?.skillLevelId ?? ''}
-                  onChange={e => setSkillLevel(sk.id, e.target.value)}
-                  style={{ background: '#191a1b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '4px',
-                    color: '#8a8f98', fontSize: '11px', padding: '2px 4px' }}>
-                  <option value="">—</option>
-                  {skillLevels.sort((a,b) => a.rank - b.rank).map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
-                </select>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+
+      <EngineerSkillEditor formData={formData} setFormData={setFormData} />
+
       <div style={{ display: 'flex', gap: '8px' }}>
         <button onClick={saveEngineer} style={addBtn}>Save Engineer</button>
         <button onClick={() => { setExpandedId(null); setNewMode(false); }} style={cancelBtn}>Cancel</button>
@@ -264,7 +328,7 @@ function LevelsTab() {
   return (
     <div style={{ maxWidth: '400px' }}>
       <div style={card}>
-        {[...skillLevels].sort((a,b) => a.rank - b.rank).map(l => (
+        {[...skillLevels].sort((a, b) => a.rank - b.rank).map(l => (
           <div key={l.id} style={rowStyle}>
             <span style={{ fontSize: '12px', color: '#62666d', width: '24px' }}>#{l.rank}</span>
             {editId === l.id ? (
