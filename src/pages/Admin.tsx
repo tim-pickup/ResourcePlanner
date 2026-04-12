@@ -228,7 +228,7 @@ function EngineersTab() {
   const { engineers, skills, addEngineer, updateEngineer } = useStore();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newMode, setNewMode] = useState(false);
-  const blankEng: Partial<Engineer> = { name: '', weeklyCapacityHours: 40, isActive: true, themeIds: [], skills: [] };
+  const blankEng: Partial<Engineer> = { name: '', weeklyCapacityHours: 37, bauSupportHours: 0, isActive: true, themeIds: [], skills: [] };
   const [formData, setFormData] = useState<Partial<Engineer>>(blankEng);
 
   function deriveThemeIds(engSkills: { skillId: string; skillLevelId: string }[]): string[] {
@@ -242,8 +242,8 @@ function EngineersTab() {
     const engSkills = formData.skills ?? [];
     const themeIds = deriveThemeIds(engSkills);
     if (expandedId === 'new') {
-      addEngineer({ id: genId(), name: formData.name!, weeklyCapacityHours: formData.weeklyCapacityHours ?? 40,
-        isActive: true, themeIds, skills: engSkills });
+      addEngineer({ id: genId(), name: formData.name!, weeklyCapacityHours: formData.weeklyCapacityHours ?? 37,
+        bauSupportHours: formData.bauSupportHours ?? 0, isActive: true, themeIds, skills: engSkills });
     } else if (expandedId) {
       updateEngineer(expandedId, { ...formData, themeIds });
     }
@@ -266,8 +266,13 @@ function EngineersTab() {
         </div>
         <div>
           <label style={fieldLabel}>Weekly Capacity (hrs)</label>
-          <input type="number" value={formData.weeklyCapacityHours ?? 40}
-            onChange={e => setFormData(f => ({ ...f, weeklyCapacityHours: parseInt(e.target.value) || 40 }))} style={inlineInput} />
+          <input type="number" value={formData.weeklyCapacityHours ?? 37}
+            onChange={e => setFormData(f => ({ ...f, weeklyCapacityHours: parseInt(e.target.value) || 37 }))} style={inlineInput} />
+        </div>
+        <div>
+          <label style={fieldLabel}>BAU Support Hours (hrs/wk)</label>
+          <input type="number" min="0" value={formData.bauSupportHours ?? 0}
+            onChange={e => setFormData(f => ({ ...f, bauSupportHours: parseInt(e.target.value) || 0 }))} style={inlineInput} />
         </div>
       </div>
 
@@ -288,7 +293,7 @@ function EngineersTab() {
             <div style={{ ...rowStyle, paddingBottom: expandedId === eng.id ? '0' : '8px' }}>
               <div style={{ flex: 1 }}>
                 <span style={{ fontSize: '14px', color: eng.isActive ? '#d0d6e0' : '#62666d', fontWeight: 510 }}>{eng.name}</span>
-                <span style={{ fontSize: '11px', color: '#62666d', marginLeft: '8px' }}>{eng.weeklyCapacityHours}h/wk · {eng.skills.length} skills</span>
+                <span style={{ fontSize: '11px', color: '#62666d', marginLeft: '8px' }}>{eng.weeklyCapacityHours}h/wk · {eng.bauSupportHours ?? 0}h BAU · {eng.skills.length} skills</span>
               </div>
               <button onClick={() => startEdit(eng)} style={editBtn}>Edit</button>
               <button onClick={() => updateEngineer(eng.id, { isActive: !eng.isActive })} style={eng.isActive ? deactivateBtn : activateBtn}>

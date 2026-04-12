@@ -28,7 +28,7 @@ export const SEED_SKILL_LEVELS: SkillLevel[] = [
 
 export const SEED_ENGINEERS: Engineer[] = [
   {
-    id: 'eng-alice', name: 'Alice Chen', weeklyCapacityHours: 40, isActive: true,
+    id: 'eng-alice', name: 'Alice Chen', weeklyCapacityHours: 37, bauSupportHours: 5, isActive: true,
     themeIds: ['theme-mom'],
     skills: [
       { skillId: 'skill-s7', skillLevelId: 'sl-advanced' },
@@ -37,7 +37,7 @@ export const SEED_ENGINEERS: Engineer[] = [
     ],
   },
   {
-    id: 'eng-bob', name: 'Bob Kumar', weeklyCapacityHours: 40, isActive: true,
+    id: 'eng-bob', name: 'Bob Kumar', weeklyCapacityHours: 37, bauSupportHours: 4, isActive: true,
     themeIds: ['theme-mom'],
     skills: [
       { skillId: 'skill-scada', skillLevelId: 'sl-specialist' },
@@ -46,7 +46,7 @@ export const SEED_ENGINEERS: Engineer[] = [
     ],
   },
   {
-    id: 'eng-carol', name: 'Carol White', weeklyCapacityHours: 40, isActive: true,
+    id: 'eng-carol', name: 'Carol White', weeklyCapacityHours: 37, bauSupportHours: 3, isActive: true,
     themeIds: ['theme-mom', 'theme-miv'],
     skills: [
       { skillId: 'skill-s7', skillLevelId: 'sl-basic' },
@@ -55,7 +55,7 @@ export const SEED_ENGINEERS: Engineer[] = [
     ],
   },
   {
-    id: 'eng-david', name: 'David Lee', weeklyCapacityHours: 40, isActive: true,
+    id: 'eng-david', name: 'David Lee', weeklyCapacityHours: 37, bauSupportHours: 5, isActive: true,
     themeIds: ['theme-miv'],
     skills: [
       { skillId: 'skill-pbi', skillLevelId: 'sl-specialist' },
@@ -64,7 +64,7 @@ export const SEED_ENGINEERS: Engineer[] = [
     ],
   },
   {
-    id: 'eng-emma', name: 'Emma Park', weeklyCapacityHours: 40, isActive: true,
+    id: 'eng-emma', name: 'Emma Park', weeklyCapacityHours: 37, bauSupportHours: 4, isActive: true,
     themeIds: ['theme-miv'],
     skills: [
       { skillId: 'skill-iot', skillLevelId: 'sl-advanced' },
@@ -73,7 +73,7 @@ export const SEED_ENGINEERS: Engineer[] = [
     ],
   },
   {
-    id: 'eng-frank', name: 'Frank Torres', weeklyCapacityHours: 40, isActive: true,
+    id: 'eng-frank', name: 'Frank Torres', weeklyCapacityHours: 37, bauSupportHours: 3, isActive: true,
     themeIds: ['theme-mom', 'theme-miv'],
     skills: [
       { skillId: 'skill-plc', skillLevelId: 'sl-specialist' },

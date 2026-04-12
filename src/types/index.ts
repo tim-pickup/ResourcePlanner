@@ -42,6 +42,7 @@ export interface Engineer {
   id: string;
   name: string;
   weeklyCapacityHours: number;
+  bauSupportHours: number;
   isActive: boolean;
   themeIds: string[];
   skills: EngineerSkill[];
