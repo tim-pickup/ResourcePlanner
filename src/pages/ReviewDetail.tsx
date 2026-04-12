@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
 import WeeklyGrid, { GridRow } from '../components/WeeklyGrid';
@@ -8,6 +9,7 @@ import { getQualifiedEngineers, getEngineerAvailableHours } from '../utils/capac
 export default function ReviewDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [customHoursMap, setCustomHoursMap] = useState<Record<string, number>>({});
   const store = useStore();
   const {
     projects, demandRows, assignments, engineers, skills, themes, skillLevels,
@@ -35,20 +37,34 @@ export default function ReviewDetail() {
     })
   );
 
-  function handleAssign(demandRowId: string, engineerId: string) {
+  function handleAssign(demandRowId: string, engineerId: string, customHoursPerWeek?: number) {
     const existing = projectAssignments.find(a => a.demandRowId === demandRowId && a.engineerId === engineerId);
     if (existing) return;
     const dr = rows.find(r => r.id === demandRowId);
     if (!dr) return;
-    // Cap assignment hours at the engineer's available hours per week
     const assignmentHours = dr.weeklyHours.map(wh => {
       const available = getEngineerAvailableHours(engineerId, wh.weekCommencing, engineers, assignments);
-      return { weekCommencing: wh.weekCommencing, hours: Math.min(wh.hours, available) };
+      // Remaining gap for this week after existing assignments
+      const alreadyAssigned = projectAssignments
+        .filter(a => a.demandRowId === demandRowId)
+        .reduce((s, a) => {
+          const awh = a.weeklyHours.find(w => w.weekCommencing === wh.weekCommencing);
+          return s + (awh?.hours ?? 0);
+        }, 0);
+      const gap = Math.max(0, wh.hours - alreadyAssigned);
+      const maxHours = Math.min(gap, available);
+      const hours = customHoursPerWeek !== undefined
+        ? Math.min(customHoursPerWeek, maxHours)
+        : maxHours;
+      return { weekCommencing: wh.weekCommencing, hours };
     });
     addAssignment({
       id: genId(), projectId: id!, demandRowId, engineerId,
       weeklyHours: assignmentHours, status: 'tentative',
     });
+    // Clear custom hours after assigning
+    const key = `${demandRowId}:${engineerId}`;
+    setCustomHoursMap(prev => { const n = { ...prev }; delete n[key]; return n; });
   }
 
   function handleSubmitForApproval() {
@@ -120,9 +136,10 @@ export default function ReviewDetail() {
           const reqLevel = r.requiredSkillLevelId ? skillLevels.find(l => l.id === r.requiredSkillLevelId) : null;
           return {
             id: r.id,
-            skillName: r.label || skill?.name || r.skillId,
+            skillName: skill?.name || r.skillId,
             themeName: theme?.name ?? '',
             requiredLevelLabel: reqLevel?.label,
+            description: r.label || undefined,
           };
         });
 
@@ -162,7 +179,8 @@ export default function ReviewDetail() {
           const assignedIds = new Set(rowAssignments.map(a => a.engineerId));
 
           const totalDemandHours = dr.weeklyHours.reduce((s, wh) => s + wh.hours, 0);
-          const assignedHours = rowAssignments.reduce((s, a) => s + a.weeklyHours.reduce((ss, wh) => ss + wh.hours, 0), 0);
+          const rawAssignedHours = rowAssignments.reduce((s, a) => s + a.weeklyHours.reduce((ss, wh) => ss + wh.hours, 0), 0);
+          const assignedHours = Math.min(rawAssignedHours, totalDemandHours);
           const gapHours = Math.max(0, totalDemandHours - assignedHours);
           const coverPct = totalDemandHours > 0 ? Math.min(100, Math.round(assignedHours / totalDemandHours * 100)) : 0;
 
@@ -173,10 +191,12 @@ export default function ReviewDetail() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                 <div>
                   <div style={{ fontSize: '14px', fontWeight: 590, color: '#f7f8f8' }}>
-                    {dr.label || skill?.name}
-                    {!dr.label && skill?.name !== skill?.name && null}
+                    {skill?.name || dr.skillId}
                     {reqLevel && <span style={{ fontSize: '12px', color: '#8a8f98', fontWeight: 400, marginLeft: '8px' }}>min {reqLevel.label}</span>}
                   </div>
+                  {dr.label && (
+                    <div style={{ fontSize: '12px', color: '#8a8f98', fontStyle: 'italic', marginTop: '1px' }}>{dr.label}</div>
+                  )}
                   <div style={{ fontSize: '12px', color: '#62666d' }}>
                     {theme?.name}
                     {phase && <span style={{ marginLeft: '8px', color: '#5e6ad2' }}>{phase.name}</span>}
@@ -205,8 +225,8 @@ export default function ReviewDetail() {
                   {rowAssignments.map(a => {
                     const eng = engineers.find(e => e.id === a.engineerId);
                     const aTotal = a.weeklyHours.reduce((s, wh) => s + wh.hours, 0);
-                    const demandTotal = dr.weeklyHours.reduce((s, wh) => s + wh.hours, 0);
-                    const isPartial = aTotal < demandTotal;
+                    // An engineer is partial if they don't cover the full remaining demand themselves
+                    const isPartial = rowAssignments.length > 1 || aTotal < totalDemandHours;
                     return (
                       <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                         padding: '6px 10px',
@@ -236,6 +256,7 @@ export default function ReviewDetail() {
                 {qualified.filter(e => !assignedIds.has(e.id)).map(eng => {
                   const engSkill = eng.skills.find(s => s.skillId === dr.skillId);
                   const engLevel = engSkill ? skillLevels.find(l => l.id === engSkill.skillLevelId) : null;
+                  const customKey = `${dr.id}:${eng.id}`;
 
                   // Per-week availability for this engineer during the demand period
                   const weeklyAvail = rowWeeks.map(w => getEngineerAvailableHours(eng.id, w, engineers, assignments));
@@ -243,9 +264,19 @@ export default function ReviewDetail() {
                   const maxAvail = weeklyAvail.length ? Math.max(...weeklyAvail) : 0;
                   const availDisplay = minAvail === maxAvail ? `${minAvail}h/wk` : `${minAvail}–${maxAvail}h/wk`;
 
-                  // How many hours they'd actually contribute
-                  const contribution = dr.weeklyHours.reduce((s, wh, i) => s + Math.min(wh.hours, weeklyAvail[i] ?? 0), 0);
-                  const wouldFullyCover = dr.weeklyHours.every((wh, i) => (weeklyAvail[i] ?? 0) >= wh.hours);
+                  // Remaining gap per week (after existing assignments to this demand row)
+                  const weeklyGap = dr.weeklyHours.map((wh) => {
+                    const alreadyAssigned = rowAssignments.reduce((s, a) => {
+                      const awh = a.weeklyHours.find(w => w.weekCommencing === wh.weekCommencing);
+                      return s + (awh?.hours ?? 0);
+                    }, 0);
+                    return Math.max(0, wh.hours - alreadyAssigned);
+                  });
+                  const maxContributionPerWeek = dr.weeklyHours.reduce((maxH, _wh, i) => {
+                    return Math.max(maxH, Math.min(weeklyGap[i], weeklyAvail[i] ?? 0));
+                  }, 0);
+                  const wouldFullyCover = dr.weeklyHours.every((_wh, i) => (weeklyAvail[i] ?? 0) >= weeklyGap[i]);
+                  const customHours = customHoursMap[customKey];
 
                   return (
                     <div key={eng.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -257,25 +288,42 @@ export default function ReviewDetail() {
                         <span style={{ fontSize: '13px', color: '#d0d6e0', fontWeight: 510 }}>{eng.name}</span>
                         <span style={{ fontSize: '11px', color: '#8a8f98', marginLeft: '8px' }}>{engLevel?.label}</span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: '11px', color: minAvail === 0 ? '#ef4444' : '#62666d' }}>
                             {availDisplay} available
                           </div>
-                          {!wouldFullyCover && minAvail > 0 && (
-                            <div style={{ fontSize: '10px', color: '#f59e0b' }}>
-                              +{contribution}h of {totalDemandHours}h if assigned
-                            </div>
-                          )}
-                          {wouldFullyCover && (
-                            <div style={{ fontSize: '10px', color: '#27a644' }}>fully covers demand</div>
+                          {wouldFullyCover && gapHours > 0 && (
+                            <div style={{ fontSize: '10px', color: '#27a644' }}>covers remaining gap</div>
                           )}
                           {minAvail === 0 && maxAvail === 0 && (
                             <div style={{ fontSize: '10px', color: '#ef4444' }}>no capacity this period</div>
                           )}
                         </div>
+                        {maxAvail > 0 && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <input
+                              type="number"
+                              min={1}
+                              max={maxContributionPerWeek || maxAvail}
+                              value={customHours ?? ''}
+                              onChange={e => {
+                                const v = parseInt(e.target.value) || undefined;
+                                setCustomHoursMap(prev => v !== undefined ? { ...prev, [customKey]: v } : (() => { const n = { ...prev }; delete n[customKey]; return n; })());
+                              }}
+                              placeholder="h/wk"
+                              title="Optional: specify hours per week (leave blank for auto)"
+                              style={{
+                                width: '56px', background: 'rgba(255,255,255,0.04)',
+                                border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px',
+                                color: '#d0d6e0', fontSize: '11px', padding: '3px 6px', outline: 'none', textAlign: 'center',
+                              }}
+                            />
+                            <span style={{ fontSize: '10px', color: '#62666d' }}>h/wk</span>
+                          </div>
+                        )}
                         <button
-                          onClick={() => handleAssign(dr.id, eng.id)}
+                          onClick={() => handleAssign(dr.id, eng.id, customHours)}
                           disabled={minAvail === 0 && maxAvail === 0}
                           style={{ ...assignBtn, opacity: minAvail === 0 && maxAvail === 0 ? 0.4 : 1,
                             cursor: minAvail === 0 && maxAvail === 0 ? 'not-allowed' : 'pointer' }}

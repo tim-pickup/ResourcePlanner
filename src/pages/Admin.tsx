@@ -141,11 +141,6 @@ function EngineerSkillEditor({
   const activeThemes = themes.filter(t => t.isActive);
   const [selectedThemeId, setSelectedThemeId] = useState(activeThemes[0]?.id ?? '');
 
-  function toggleTheme(themeId: string) {
-    const ids = formData.themeIds ?? [];
-    setFormData(f => ({ ...f, themeIds: ids.includes(themeId) ? ids.filter(t => t !== themeId) : [...ids, themeId] }));
-  }
-
   function setSkillLevel(skillId: string, levelId: string) {
     const cur = formData.skills ?? [];
     const exists = cur.find(s => s.skillId === skillId);
@@ -162,19 +157,6 @@ function EngineerSkillEditor({
 
   return (
     <>
-      {/* Themes (checkbox) */}
-      <div style={{ marginBottom: '12px' }}>
-        <label style={fieldLabel}>Themes</label>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {activeThemes.map(t => (
-            <label key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: '#d0d6e0', cursor: 'pointer' }}>
-              <input type="checkbox" checked={(formData.themeIds ?? []).includes(t.id)} onChange={() => toggleTheme(t.id)} style={{ accentColor: '#5e6ad2' }} />
-              {t.name}
-            </label>
-          ))}
-        </div>
-      </div>
-
       {/* Theme-scoped skill proficiencies */}
       <div style={{ marginBottom: '12px' }}>
         <label style={fieldLabel}>Skill Proficiencies</label>
@@ -243,19 +225,27 @@ function EngineerSkillEditor({
 }
 
 function EngineersTab() {
-  const { engineers, addEngineer, updateEngineer } = useStore();
+  const { engineers, skills, addEngineer, updateEngineer } = useStore();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newMode, setNewMode] = useState(false);
   const blankEng: Partial<Engineer> = { name: '', weeklyCapacityHours: 40, isActive: true, themeIds: [], skills: [] };
   const [formData, setFormData] = useState<Partial<Engineer>>(blankEng);
 
+  function deriveThemeIds(engSkills: { skillId: string; skillLevelId: string }[]): string[] {
+    return [...new Set(
+      engSkills.map(es => skills.find(s => s.id === es.skillId)?.themeId).filter((t): t is string => !!t)
+    )];
+  }
+
   function saveEngineer() {
     if (!formData.name?.trim()) return;
+    const engSkills = formData.skills ?? [];
+    const themeIds = deriveThemeIds(engSkills);
     if (expandedId === 'new') {
       addEngineer({ id: genId(), name: formData.name!, weeklyCapacityHours: formData.weeklyCapacityHours ?? 40,
-        isActive: true, themeIds: formData.themeIds ?? [], skills: formData.skills ?? [] });
+        isActive: true, themeIds, skills: engSkills });
     } else if (expandedId) {
-      updateEngineer(expandedId, formData);
+      updateEngineer(expandedId, { ...formData, themeIds });
     }
     setExpandedId(null);
     setNewMode(false);

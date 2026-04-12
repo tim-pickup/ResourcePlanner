@@ -7,6 +7,7 @@ export interface GridRow {
   skillName: string;
   themeName: string;
   requiredLevelLabel?: string;
+  description?: string;
 }
 
 type ViewMode = 'week' | 'month' | 'quarter';
@@ -140,6 +141,9 @@ export default function WeeklyGrid({
                   <div style={{ fontSize: '11px', color: '#62666d' }}>
                     {row.themeName}{row.requiredLevelLabel ? ` · min ${row.requiredLevelLabel}` : ''}
                   </div>
+                  {row.description && (
+                    <div style={{ fontSize: '10px', color: '#8a8f98', marginTop: '2px', fontStyle: 'italic' }}>{row.description}</div>
+                  )}
                 </td>
                 {displayCols.map(col => {
                   const val = getAggHours(row.id, col.weeks);

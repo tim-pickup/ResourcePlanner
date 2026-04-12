@@ -97,8 +97,11 @@ export default function CapacityPanel({
                 <tr key={dr.id}>
                   <td style={{ ...td, minWidth: '160px' }}>
                     <div style={{ fontWeight: 510, color: '#d0d6e0', fontSize: '13px' }}>
-                      {dr.label || skill?.name || dr.skillId}
+                      {skill?.name || dr.skillId}
                     </div>
+                    {dr.label && (
+                      <div style={{ fontSize: '10px', color: '#8a8f98', fontStyle: 'italic' }}>{dr.label}</div>
+                    )}
                     <div style={{ fontSize: '11px', color: '#62666d' }}>{theme?.name}</div>
                     <div style={{ fontSize: '10px', marginTop: '3px', color: totalGap > 0 ? '#f59e0b' : '#27a644' }}>
                       {totalDemand === 0 ? 'No demand' : totalGap > 0 ? `${totalGap}h gap remaining` : 'Fully covered'}

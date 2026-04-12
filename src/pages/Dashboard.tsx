@@ -1,7 +1,7 @@
 import { useStore } from '../store';
 import { ProjectStatus } from '../types';
 import { formatWeekLabel } from '../utils/dates';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
 const STATUS_ORDER: ProjectStatus[] = ['draft','submitted','under_review','pending_approval','approved','rejected'];
@@ -49,10 +49,13 @@ const CUSTOM_TOOLTIP_STYLE = {
   color: '#d0d6e0',
 };
 
-function CapacityDemandChart() {
-  const { engineers, demandRows } = useStore();
+const THEME_COLORS: Record<string, { cap: string; demand: string; committed: string }> = {
+  'theme-mom': { cap: '#5e6ad2', demand: '#a78bfa', committed: '#27a644' },
+  'theme-miv': { cap: '#27a644', demand: '#4ade80', committed: '#f59e0b' },
+};
 
-  const totalCapacity = engineers.reduce((s, e) => s + (e.isActive ? e.weeklyCapacityHours : 0), 0);
+function CapacityDemandChart() {
+  const { engineers, demandRows, assignments, skills, themes } = useStore();
 
   const weekSet = new Set<string>();
   demandRows.forEach(r => r.weeklyHours.forEach(wh => weekSet.add(wh.weekCommencing)));
@@ -60,35 +63,64 @@ function CapacityDemandChart() {
 
   if (weeks.length === 0) return null;
 
+  const activeThemes = themes.filter(t => t.isActive);
+  if (activeThemes.length === 0) return null;
+
   const data = weeks.map(w => {
-    const demand = demandRows.reduce((s, r) => {
-      const wh = r.weeklyHours.find(h => h.weekCommencing === w);
-      return s + (wh?.hours ?? 0);
-    }, 0);
-    return { week: formatWeekLabel(w), capacity: totalCapacity, demand };
+    const point: Record<string, string | number> = { week: formatWeekLabel(w) };
+    activeThemes.forEach(theme => {
+      const themeEngineers = engineers.filter(e => e.isActive && e.themeIds.includes(theme.id));
+      const themeSkillIds = new Set(skills.filter(s => s.themeId === theme.id).map(s => s.id));
+      const cap = themeEngineers.reduce((s, e) => s + e.weeklyCapacityHours, 0);
+      const demand = demandRows
+        .filter(r => themeSkillIds.has(r.skillId))
+        .reduce((s, r) => s + (r.weeklyHours.find(h => h.weekCommencing === w)?.hours ?? 0), 0);
+      const committed = assignments
+        .filter(a => a.status === 'locked')
+        .reduce((s, a) => {
+          const dr = demandRows.find(r => r.id === a.demandRowId);
+          if (!dr || !themeSkillIds.has(dr.skillId)) return s;
+          return s + (a.weeklyHours.find(h => h.weekCommencing === w)?.hours ?? 0);
+        }, 0);
+      point[`${theme.id}_cap`] = cap;
+      point[`${theme.id}_demand`] = demand;
+      point[`${theme.id}_committed`] = committed;
+    });
+    return point;
   });
 
   return (
     <div style={{ marginBottom: '32px' }}>
       <h2 style={sectionHead}>Capacity vs Demand Over Time</h2>
-      <div style={{
-        background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '8px', padding: '16px',
-      }}>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={data} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-            <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#62666d' }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-            <YAxis tick={{ fontSize: 10, fill: '#62666d' }} tickLine={false} axisLine={false} />
-            <Tooltip
-              contentStyle={CUSTOM_TOOLTIP_STYLE}
-              labelStyle={{ color: '#8a8f98', marginBottom: '4px' }}
-              cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-            />
-            <Legend wrapperStyle={{ fontSize: '11px', color: '#8a8f98', paddingTop: '8px' }} />
-            <Bar dataKey="capacity" name="Team Capacity (h)" fill="#5e6ad255" radius={[2,2,0,0]} />
-            <Bar dataKey="demand" name="Total Demand (h)" fill="#f59e0b" radius={[2,2,0,0]} />
-          </BarChart>
-        </ResponsiveContainer>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '16px' }}>
+        {activeThemes.map(theme => {
+          const colors = THEME_COLORS[theme.id] ?? { cap: '#5e6ad2', demand: '#f59e0b', committed: '#27a644' };
+          return (
+            <div key={theme.id} style={{
+              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '8px', padding: '16px',
+            }}>
+              <div style={{ fontSize: '13px', fontWeight: 590, color: '#f7f8f8', marginBottom: '2px' }}>
+                {theme.name} — Capacity vs Demand
+              </div>
+              <div style={{ fontSize: '11px', color: '#62666d', marginBottom: '12px' }}>
+                Hours per week for this theme's engineers and projects
+              </div>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={data} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                  <XAxis dataKey="week" tick={{ fontSize: 9, fill: '#62666d' }} tickLine={false} axisLine={false} interval={3} />
+                  <YAxis tick={{ fontSize: 10, fill: '#62666d' }} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={CUSTOM_TOOLTIP_STYLE} cursor={{ stroke: 'rgba(255,255,255,0.1)' }} />
+                  <Legend wrapperStyle={{ fontSize: '10px', color: '#8a8f98' }} />
+                  <Line type="monotone" dataKey={`${theme.id}_cap`} name="Capacity (h)" stroke={colors.cap} strokeWidth={2} dot={false} strokeDasharray="4 4" />
+                  <Line type="monotone" dataKey={`${theme.id}_demand`} name="Demand (h)" stroke={colors.demand} strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey={`${theme.id}_committed`} name="Committed (h)" stroke={colors.committed} strokeWidth={1.5} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
