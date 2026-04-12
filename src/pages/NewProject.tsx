@@ -40,6 +40,7 @@ export default function NewProject() {
   const [phases, setPhases] = useState<LocalPhase[]>([makePhase(1)]);
   const [rowDefs, setRowDefs] = useState<LocalDemandRow[]>([]);
   const [weeklyHours, setWeeklyHours] = useState<Record<string, Record<string, number>>>({});
+  const [fillValues, setFillValues] = useState<Record<string, number>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -90,6 +91,15 @@ export default function NewProject() {
   }
   function handleHoursChange(rowId: string, week: string, hours: number) {
     setWeeklyHours(prev => ({ ...prev, [rowId]: { ...(prev[rowId] ?? {}), [week]: hours } }));
+  }
+
+  function handleFillAll(rowId: string, phaseWeeks: string[]) {
+    const h = fillValues[rowId] ?? 0;
+    setWeeklyHours(prev => {
+      const updated = { ...(prev[rowId] ?? {}) };
+      phaseWeeks.forEach(w => { updated[w] = h; });
+      return { ...prev, [rowId]: updated };
+    });
   }
 
   function validateStep1() {
@@ -246,9 +256,10 @@ export default function NewProject() {
               const reqLevel = def.requiredSkillLevelId ? skillLevels.find(l => l.id === def.requiredSkillLevelId) : null;
               return {
                 id: def.rowId,
-                skillName: def.label || skill?.name || def.skillId,
+                skillName: skill?.name || def.skillId,
                 themeName: theme?.name ?? '',
                 requiredLevelLabel: reqLevel?.label,
+                description: def.label || undefined,
               };
             });
 
@@ -273,38 +284,59 @@ export default function NewProject() {
                 {phRows.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
                     {phRows.map(def => {
-                      const skill = activeSkills.find(s => s.id === def.skillId);
                       return (
                         <div key={def.rowId} style={{
-                          display: 'flex', gap: '8px', alignItems: 'center',
                           background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
                           borderRadius: '6px', padding: '8px 10px',
                         }}>
-                          <select value={def.skillId} onChange={e => updateRow(def.rowId, { skillId: e.target.value })}
-                            style={{ ...sel, minWidth: '150px' }}>
-                            {activeThemes.map(t => (
-                              <optgroup key={t.id} label={t.name}>
-                                {activeSkills.filter(s => s.themeId === t.id).map(s => (
-                                  <option key={s.id} value={s.id}>{s.name}</option>
-                                ))}
-                              </optgroup>
-                            ))}
-                          </select>
-                          <select value={def.requiredSkillLevelId ?? ''}
-                            onChange={e => updateRow(def.rowId, { requiredSkillLevelId: e.target.value || null })}
-                            style={{ ...sel, minWidth: '110px' }}>
-                            <option value="">Any level</option>
-                            {skillLevels.sort((a,b) => a.rank - b.rank).map(l => (
-                              <option key={l.id} value={l.id}>{l.label}+</option>
-                            ))}
-                          </select>
-                          <input
-                            value={def.label}
-                            onChange={e => updateRow(def.rowId, { label: e.target.value })}
-                            placeholder={`Label, e.g. "Senior ${skill?.name ?? ''}"`}
-                            style={{ ...sel, flex: 1, fontSize: '12px' }}
-                          />
-                          <button onClick={() => removeRow(def.rowId)} style={removeBtn}>×</button>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
+                            <select value={def.skillId} onChange={e => updateRow(def.rowId, { skillId: e.target.value })}
+                              style={{ ...sel, minWidth: '150px' }}>
+                              {activeThemes.map(t => (
+                                <optgroup key={t.id} label={t.name}>
+                                  {activeSkills.filter(s => s.themeId === t.id).map(s => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                  ))}
+                                </optgroup>
+                              ))}
+                            </select>
+                            <select value={def.requiredSkillLevelId ?? ''}
+                              onChange={e => updateRow(def.rowId, { requiredSkillLevelId: e.target.value || null })}
+                              style={{ ...sel, minWidth: '110px' }}>
+                              <option value="">Any level</option>
+                              {skillLevels.sort((a,b) => a.rank - b.rank).map(l => (
+                                <option key={l.id} value={l.id}>{l.label}+</option>
+                              ))}
+                            </select>
+                            <button onClick={() => removeRow(def.rowId)} style={{ ...removeBtn, marginLeft: 'auto' }}>×</button>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <input
+                              value={def.label}
+                              onChange={e => updateRow(def.rowId, { label: e.target.value })}
+                              placeholder="Description (optional) — shown under the skill name"
+                              style={{ ...sel, flex: 1, fontSize: '12px' }}
+                            />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                              <span style={{ fontSize: '11px', color: '#62666d', whiteSpace: 'nowrap' }}>Fill all weeks:</span>
+                              <input
+                                type="number"
+                                min={0}
+                                max={999}
+                                value={fillValues[def.rowId] ?? ''}
+                                onChange={e => setFillValues(prev => ({ ...prev, [def.rowId]: parseInt(e.target.value) || 0 }))}
+                                placeholder="h/wk"
+                                style={{ ...sel, width: '64px', textAlign: 'center' }}
+                              />
+                              <button
+                                onClick={() => handleFillAll(def.rowId, phWeeks)}
+                                style={ghostBtn}
+                                disabled={phWeeks.length === 0}
+                              >
+                                Apply
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       );
                     })}
