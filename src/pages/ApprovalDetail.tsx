@@ -150,12 +150,12 @@ export default function ApprovalDetail() {
   );
 }
 
-const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: '#f7f8f8', letterSpacing: '-0.03em', margin: 0 };
-const sub: React.CSSProperties = { fontSize: '13px', color: '#8a8f98', margin: 0 };
-const backBtn: React.CSSProperties = { background: 'none', border: 'none', color: '#62666d', fontSize: '13px', cursor: 'pointer', padding: '0 0 8px', display: 'block' };
-const sectionHead: React.CSSProperties = { fontSize: '13px', fontWeight: 590, color: '#8a8f98', letterSpacing: '0.05em', textTransform: 'uppercase', margin: '0 0 12px' };
-const card: React.CSSProperties = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '16px' };
+const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: 'var(--c-text-1)', letterSpacing: '-0.03em', margin: 0 };
+const sub: React.CSSProperties = { fontSize: '13px', color: 'var(--c-text-3)', margin: 0 };
+const backBtn: React.CSSProperties = { background: 'none', border: 'none', color: 'var(--c-text-4)', fontSize: '13px', cursor: 'pointer', padding: '0 0 8px', display: 'block' };
+const sectionHead: React.CSSProperties = { fontSize: '13px', fontWeight: 590, color: 'var(--c-text-3)', letterSpacing: '0.05em', textTransform: 'uppercase', margin: '0 0 12px' };
+const card: React.CSSProperties = { background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: '8px', padding: '16px' };
 const approveBtn: React.CSSProperties = { background: 'rgba(39,166,68,0.15)', color: '#4ade80', border: '1px solid rgba(39,166,68,0.3)', borderRadius: '6px', padding: '8px 16px', fontSize: '13px', fontWeight: 510, cursor: 'pointer' };
 const rejectBtnStyle: React.CSSProperties = { background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '6px', padding: '8px 16px', fontSize: '13px', fontWeight: 510, cursor: 'pointer' };
-const ghostBtn: React.CSSProperties = { background: 'rgba(255,255,255,0.04)', color: '#d0d6e0', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '8px 16px', fontSize: '13px', fontWeight: 510, cursor: 'pointer' };
-const inputStyle: React.CSSProperties = { width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#d0d6e0', fontSize: '14px', padding: '8px 12px', outline: 'none', boxSizing: 'border-box' };
+const ghostBtn: React.CSSProperties = { background: 'var(--c-card-hover)', color: 'var(--c-text-2)', border: '1px solid var(--c-border)', borderRadius: '6px', padding: '8px 16px', fontSize: '13px', fontWeight: 510, cursor: 'pointer' };
+const inputStyle: React.CSSProperties = { width: '100%', background: 'var(--c-input-bg-alt)', border: '1px solid var(--c-input-border)', borderRadius: '6px', color: 'var(--c-input-text)', fontSize: '14px', padding: '8px 12px', outline: 'none', boxSizing: 'border-box' };

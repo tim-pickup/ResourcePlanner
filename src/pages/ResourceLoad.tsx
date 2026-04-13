@@ -6,8 +6,9 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, Legend,
   ResponsiveContainer, CartesianGrid,
 } from 'recharts';
-
 import { Assignment } from '../types';
+import { useTheme, getChartColors } from '../store/theme';
+import { CHART_LINE_COLORS, getThemeLineColors } from '../utils/chartColors';
 
 function getEngineerWeeklyCommitted(
   engineerId: string,
@@ -23,20 +24,14 @@ function getEngineerWeeklyCommitted(
     }, 0);
 }
 
-const TOOLTIP_STYLE = {
-  background: '#191a1b',
-  border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: '6px',
-  fontSize: '12px',
-  color: '#d0d6e0',
-};
-
 // ─── Overview ────────────────────────────────────────────────────────────────
 
 function OverallCapacityDemandChart() {
   const { engineers, demandRows, assignments } = useStore();
-  const activeEngineers = engineers.filter(e => e.isActive);
+  const { theme } = useTheme();
+  const cc = getChartColors(theme);
 
+  const activeEngineers = engineers.filter(e => e.isActive);
   const totalCap = activeEngineers.reduce((s, e) => s + e.weeklyCapacityHours, 0);
   const totalBau = activeEngineers.reduce((s, e) => s + (e.bauSupportHours ?? 0), 0);
 
@@ -49,30 +44,39 @@ function OverallCapacityDemandChart() {
   const data = weeks.map(w => {
     const projectDemand = demandRows.reduce((s, r) =>
       s + (r.weeklyHours.find(h => h.weekCommencing === w)?.hours ?? 0), 0);
-    const committed = activeEngineers.reduce((s, e) =>
+    const lockedProjectHours = activeEngineers.reduce((s, e) =>
       s + getEngineerWeeklyCommitted(e.id, w, assignments, 'locked'), 0);
     return {
       week: formatWeekLabel(w),
       capacity: totalCap,
-      bauDemand: totalBau,
+      bau: totalBau,
       projectDemand,
-      committed,
+      // Stacked: committed = BAU + locked project hours (always >= BAU)
+      committed: totalBau + lockedProjectHours,
     };
   });
 
+  const tooltipStyle = {
+    background: cc.tooltipBg,
+    border: `1px solid ${cc.tooltipBorder}`,
+    borderRadius: '6px',
+    fontSize: '12px',
+    color: cc.tooltipText,
+  };
+
   return (
-    <ChartCard title="Total Capacity vs Demand" subtitle="Team capacity against project demand and BAU support commitments">
+    <ChartCard title="Total Capacity vs Demand" subtitle="Committed = BAU + locked project hours (stacked). Capacity = total weekly hours across all engineers.">
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={data} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-          <XAxis dataKey="week" tick={{ fontSize: 9, fill: '#62666d' }} tickLine={false} axisLine={false} interval={3} />
-          <YAxis tick={{ fontSize: 10, fill: '#62666d' }} tickLine={false} axisLine={false} />
-          <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ stroke: 'rgba(255,255,255,0.1)' }} />
-          <Legend wrapperStyle={{ fontSize: '10px', color: '#8a8f98' }} />
-          <Line type="monotone" dataKey="capacity" name="Capacity (h)" stroke="#5e6ad2" strokeWidth={2} dot={false} strokeDasharray="4 4" />
-          <Line type="monotone" dataKey="bauDemand" name="BAU Support (h)" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="2 3" />
-          <Line type="monotone" dataKey="projectDemand" name="Project Demand (h)" stroke="#a78bfa" strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="committed" name="Committed (h)" stroke="#27a644" strokeWidth={1.5} dot={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={cc.grid} />
+          <XAxis dataKey="week" tick={{ fontSize: 9, fill: cc.tick }} tickLine={false} axisLine={false} interval={3} />
+          <YAxis tick={{ fontSize: 10, fill: cc.tick }} tickLine={false} axisLine={false} />
+          <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: cc.cursor }} />
+          <Legend wrapperStyle={{ fontSize: '10px', color: cc.legendText }} />
+          <Line type="monotone" dataKey="capacity" name="Capacity (h)" stroke={CHART_LINE_COLORS.capacity} strokeWidth={2} dot={false} strokeDasharray="4 4" />
+          <Line type="monotone" dataKey="bau" name="BAU (h)" stroke={CHART_LINE_COLORS.bau} strokeWidth={2} dot={false} strokeDasharray="2 3" />
+          <Line type="monotone" dataKey="committed" name="Committed (h)" stroke={CHART_LINE_COLORS.committed} strokeWidth={2} dot={false} />
+          <Line type="monotone" dataKey="projectDemand" name="Project Demand (h)" stroke={CHART_LINE_COLORS.demand} strokeWidth={2} dot={false} />
         </LineChart>
       </ResponsiveContainer>
     </ChartCard>
@@ -83,6 +87,8 @@ function OverallCapacityDemandChart() {
 
 function ThemeCapacityChart() {
   const { engineers, demandRows, skills, themes, assignments, projects } = useStore();
+  const { theme } = useTheme();
+  const cc = getChartColors(theme);
 
   const weekSet = new Set<string>();
   demandRows.forEach(r => r.weeklyHours.forEach(wh => weekSet.add(wh.weekCommencing)));
@@ -90,62 +96,67 @@ function ThemeCapacityChart() {
   if (weeks.length === 0) return null;
 
   const activeThemes = themes.filter(t => t.isActive);
-  const THEME_COLORS: Record<string, { cap: string; demand: string }> = {
-    'theme-mom': { cap: '#5e6ad2', demand: '#a78bfa' },
-    'theme-miv': { cap: '#27a644', demand: '#4ade80' },
-  };
 
   const data = weeks.map(w => {
     const point: Record<string, string | number> = { week: formatWeekLabel(w) };
-    activeThemes.forEach(theme => {
-      const themeEngineers = engineers.filter(e => e.isActive && e.themeIds.includes(theme.id));
-      const themeSkillIds = new Set(skills.filter(s => s.themeId === theme.id).map(s => s.id));
+    activeThemes.forEach(t => {
+      const themeEngineers = engineers.filter(e => e.isActive && e.themeIds.includes(t.id));
+      const themeSkillIds = new Set(skills.filter(s => s.themeId === t.id).map(s => s.id));
       const cap = themeEngineers.reduce((s, e) => s + e.weeklyCapacityHours, 0);
+      const themeBAU = themeEngineers.reduce((s, e) => s + (e.bauSupportHours ?? 0), 0);
       const demand = demandRows
         .filter(r => themeSkillIds.has(r.skillId))
         .reduce((s, r) => s + (r.weeklyHours.find(h => h.weekCommencing === w)?.hours ?? 0), 0);
-      const committed = assignments
+      const lockedProjectHours = assignments
         .filter(a => a.status === 'locked')
         .reduce((s, a) => {
           const dr = demandRows.find(r => r.id === a.demandRowId);
           if (!dr || !themeSkillIds.has(dr.skillId)) return s;
           return s + (a.weeklyHours.find(h => h.weekCommencing === w)?.hours ?? 0);
         }, 0);
-      point[`${theme.id}_cap`] = cap;
-      point[`${theme.id}_demand`] = demand;
-      point[`${theme.id}_committed`] = committed;
+      point[`${t.id}_cap`] = cap;
+      point[`${t.id}_demand`] = demand;
+      // Stacked: committed = themeBAU + locked project hours for this theme
+      point[`${t.id}_committed`] = themeBAU + lockedProjectHours;
     });
     return point;
   });
 
+  const tooltipStyle = {
+    background: cc.tooltipBg,
+    border: `1px solid ${cc.tooltipBorder}`,
+    borderRadius: '6px',
+    fontSize: '12px',
+    color: cc.tooltipText,
+  };
+
   return (
     <div>
-      {activeThemes.map(theme => {
-        const colors = THEME_COLORS[theme.id] ?? { cap: '#5e6ad2', demand: '#f59e0b' };
-        const themeSkillIds = new Set(skills.filter(s => s.themeId === theme.id).map(s => s.id));
+      {activeThemes.map(t => {
+        const colors = getThemeLineColors(t.id);
+        const themeSkillIds = new Set(skills.filter(s => s.themeId === t.id).map(s => s.id));
         const themeProjects = projects.filter(p =>
           demandRows.some(r => r.projectId === p.id && themeSkillIds.has(r.skillId))
         );
 
         return (
-          <ChartCard key={theme.id} title={`${theme.name} — Capacity vs Demand`} subtitle="Hours per week for this theme's engineers and projects">
+          <ChartCard key={t.id} title={`${t.name} — Capacity vs Demand`} subtitle="Hours per week for this theme's engineers and projects. Committed = BAU + locked hours.">
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={data} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                <XAxis dataKey="week" tick={{ fontSize: 9, fill: '#62666d' }} tickLine={false} axisLine={false} interval={3} />
-                <YAxis tick={{ fontSize: 10, fill: '#62666d' }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ stroke: 'rgba(255,255,255,0.1)' }} />
-                <Legend wrapperStyle={{ fontSize: '10px', color: '#8a8f98' }} />
-                <Line type="monotone" dataKey={`${theme.id}_cap`} name="Capacity (h)" stroke={colors.cap} strokeWidth={2} dot={false} strokeDasharray="4 4" />
-                <Line type="monotone" dataKey={`${theme.id}_demand`} name="Demand (h)" stroke={colors.demand} strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey={`${theme.id}_committed`} name="Committed (h)" stroke="#27a644" strokeWidth={1.5} dot={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={cc.grid} />
+                <XAxis dataKey="week" tick={{ fontSize: 9, fill: cc.tick }} tickLine={false} axisLine={false} interval={3} />
+                <YAxis tick={{ fontSize: 10, fill: cc.tick }} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: cc.cursor }} />
+                <Legend wrapperStyle={{ fontSize: '10px', color: cc.legendText }} />
+                <Line type="monotone" dataKey={`${t.id}_cap`} name="Capacity (h)" stroke={colors.cap} strokeWidth={2} dot={false} strokeDasharray="4 4" />
+                <Line type="monotone" dataKey={`${t.id}_demand`} name="Project Demand (h)" stroke={colors.demand} strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey={`${t.id}_committed`} name="Committed (h)" stroke={colors.committed} strokeWidth={1.5} dot={false} />
               </LineChart>
             </ResponsiveContainer>
 
-            {/* Project breakdown for this theme */}
             {themeProjects.length > 0 && (
-              <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ fontSize: '11px', fontWeight: 590, color: '#62666d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--c-border-sm)' }}>
+                <div style={{ fontSize: '11px', fontWeight: 590, color: 'var(--c-text-4)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Projects in this theme
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -155,11 +166,11 @@ function ThemeCapacityChart() {
                       .reduce((s, r) => s + r.weeklyHours.reduce((ss, wh) => ss + wh.hours, 0), 0);
                     return (
                       <div key={p.id} style={{
-                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+                        background: 'var(--c-card-sm)', border: '1px solid var(--c-border-sm)',
                         borderRadius: '5px', padding: '5px 10px', fontSize: '11px',
                       }}>
-                        <span style={{ color: '#d0d6e0', fontWeight: 510 }}>{p.name}</span>
-                        <span style={{ color: '#62666d', marginLeft: '6px' }}>{totalDemand}h total</span>
+                        <span style={{ color: 'var(--c-text-2)', fontWeight: 510 }}>{p.name}</span>
+                        <span style={{ color: 'var(--c-text-4)', marginLeft: '6px' }}>{totalDemand}h total</span>
                         <span style={{
                           marginLeft: '6px', fontSize: '10px', padding: '1px 5px', borderRadius: '4px',
                           background: p.status === 'approved' ? 'rgba(39,166,68,0.12)' : 'rgba(245,158,11,0.1)',
@@ -188,51 +199,50 @@ function EngineerUtilizationHeatmap() {
   const weeks = [...weekSet].sort().slice(0, 24);
   if (weeks.length === 0) return null;
 
-  function netCapacity(eng: (typeof engineers)[0]) {
-    return eng.weeklyCapacityHours - (eng.bauSupportHours ?? 0);
-  }
-
-  function getUtilPct(engineerId: string, week: string, cap: number): number {
-    if (cap === 0) return 0;
-    const committed = getEngineerWeeklyCommitted(engineerId, week, assignments, 'all');
-    return Math.min(100, Math.round(committed / cap * 100));
+  function getUtilPct(engineerId: string, week: string, totalCap: number, bauHours: number): number {
+    if (totalCap === 0) return 0;
+    const projectCommitted = getEngineerWeeklyCommitted(engineerId, week, assignments, 'all');
+    // % of TOTAL capacity including BAU
+    return Math.min(120, Math.round((projectCommitted + bauHours) / totalCap * 100));
   }
 
   function utilColor(pct: number): string {
-    if (pct === 0) return 'rgba(255,255,255,0.04)';
+    if (pct === 0) return 'var(--c-card)';
     if (pct < 50) return `rgba(94,106,210,${0.15 + pct / 100 * 0.4})`;
-    if (pct < 80) return `rgba(245,158,11,${0.4 + (pct - 50) / 50 * 0.4})`;
+    if (pct < 85) return `rgba(245,158,11,${0.4 + (pct - 50) / 50 * 0.4})`;
     return '#ef4444';
   }
 
   return (
-    <ChartCard title="Engineer Utilization Heat Map" subtitle="% of weekly project capacity committed (locked + tentative). BAU hours excluded from capacity denominator.">
+    <ChartCard title="Engineer Utilization Heat Map" subtitle="% of total weekly capacity (project hours + BAU). Over 85% = near or over capacity.">
       <div style={{ overflowX: 'auto' }}>
         <table style={{ borderCollapse: 'collapse', fontSize: '11px' }}>
           <thead>
             <tr>
-              <th style={{ ...hmTh, textAlign: 'left', minWidth: '130px', position: 'sticky', left: 0, background: '#0f1011', zIndex: 2 }}>Engineer</th>
+              <th style={{ ...hmTh, textAlign: 'left', minWidth: '130px', position: 'sticky', left: 0, background: 'var(--c-surface)', zIndex: 2 }}>Engineer</th>
               {weeks.map(w => <th key={w} style={{ ...hmTh, minWidth: '48px' }}>{formatWeekLabel(w)}</th>)}
             </tr>
           </thead>
           <tbody>
             {engineers.filter(e => e.isActive).map(eng => {
-              const cap = netCapacity(eng);
+              const bau = eng.bauSupportHours ?? 0;
+              const totalCap = eng.weeklyCapacityHours;
               return (
                 <tr key={eng.id}>
-                  <td style={{ ...hmTd, position: 'sticky', left: 0, background: '#0f1011', zIndex: 1, fontWeight: 510, color: '#d0d6e0' }}>
+                  <td style={{ ...hmTd, position: 'sticky', left: 0, background: 'var(--c-surface)', zIndex: 1, fontWeight: 510, color: 'var(--c-text-2)' }}>
                     <div>{eng.name.split(' ')[0]}</div>
-                    <div style={{ fontSize: '10px', color: '#62666d' }}>
-                      {cap}h proj · <span style={{ color: '#f59e0b88' }}>{eng.bauSupportHours ?? 0}h BAU</span>
+                    <div style={{ fontSize: '10px', color: 'var(--c-text-4)' }}>
+                      {totalCap}h total · <span style={{ color: '#f59e0b88' }}>{bau}h BAU</span>
                     </div>
                   </td>
                   {weeks.map(w => {
-                    const pct = getUtilPct(eng.id, w, cap);
-                    const committed = getEngineerWeeklyCommitted(eng.id, w, assignments, 'all');
+                    const pct = getUtilPct(eng.id, w, totalCap, bau);
+                    const projectCommitted = getEngineerWeeklyCommitted(eng.id, w, assignments, 'all');
+                    const totalCommitted = projectCommitted + bau;
                     return (
                       <td key={w} style={{ ...hmTd, background: utilColor(pct), textAlign: 'center' }}
-                        title={`${eng.name}: ${committed}h/${cap}h project (${pct}%) + ${eng.bauSupportHours ?? 0}h BAU`}>
-                        {pct > 0 ? <span style={{ fontSize: '10px', color: pct > 60 ? '#fff' : '#d0d6e0', fontWeight: pct >= 100 ? 590 : 400 }}>{pct}%</span> : null}
+                        title={`${eng.name}: ${projectCommitted}h project + ${bau}h BAU = ${totalCommitted}h / ${totalCap}h (${pct}%)`}>
+                        {pct > 0 ? <span style={{ fontSize: '10px', color: pct > 70 ? '#fff' : 'var(--c-text-2)', fontWeight: pct >= 100 ? 590 : 400 }}>{pct}%</span> : null}
                       </td>
                     );
                   })}
@@ -242,15 +252,15 @@ function EngineerUtilizationHeatmap() {
           </tbody>
         </table>
       </div>
-      <div style={{ display: 'flex', gap: '12px', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '12px', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--c-border-sm)', flexWrap: 'wrap' }}>
         {[
           { color: 'rgba(94,106,210,0.4)', label: '< 50% — Available capacity' },
-          { color: 'rgba(245,158,11,0.7)', label: '50–80% — Busy' },
-          { color: '#ef4444', label: '≥ 80% — Near / Over capacity' },
+          { color: 'rgba(245,158,11,0.7)', label: '50–85% — Busy' },
+          { color: '#ef4444', label: '≥ 85% — Near / Over capacity' },
         ].map(({ color, label }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
             <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: color }} />
-            <span style={{ fontSize: '11px', color: '#62666d' }}>{label}</span>
+            <span style={{ fontSize: '11px', color: 'var(--c-text-4)' }}>{label}</span>
           </div>
         ))}
       </div>
@@ -288,10 +298,10 @@ function EngineerProjectBreakdown() {
         if (projectEntries.length === 0 && bau === 0) return null;
 
         return (
-          <div key={eng.id} style={{ marginBottom: '20px', paddingBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ fontSize: '12px', fontWeight: 590, color: '#d0d6e0', marginBottom: '6px' }}>
+          <div key={eng.id} style={{ marginBottom: '20px', paddingBottom: '20px', borderBottom: '1px solid var(--c-border-sm)' }}>
+            <div style={{ fontSize: '12px', fontWeight: 590, color: 'var(--c-text-2)', marginBottom: '6px' }}>
               {eng.name}
-              <span style={{ fontSize: '11px', color: '#62666d', marginLeft: '6px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--c-text-4)', marginLeft: '6px' }}>
                 {eng.weeklyCapacityHours}h/wk total · {eng.weeklyCapacityHours - bau}h project · <span style={{ color: '#f59e0b' }}>{bau}h BAU</span>
               </span>
             </div>
@@ -299,18 +309,18 @@ function EngineerProjectBreakdown() {
               <table style={{ borderCollapse: 'collapse', fontSize: '11px' }}>
                 <thead>
                   <tr>
-                    <th style={{ ...hmTh, textAlign: 'left', minWidth: '170px', color: '#62666d' }}>Project</th>
+                    <th style={{ ...hmTh, textAlign: 'left', minWidth: '170px', color: 'var(--c-text-4)' }}>Project</th>
                     {weeks.map(w => <th key={w} style={{ ...hmTh, minWidth: '44px' }}>{formatWeekLabel(w)}</th>)}
                   </tr>
                 </thead>
                 <tbody>
                   {projectEntries.map(([projId, { name, weeklyHours }]) => (
                     <tr key={projId}>
-                      <td style={{ ...hmTd, color: '#8a8f98', fontWeight: 510, paddingRight: '12px' }}>{name}</td>
+                      <td style={{ ...hmTd, color: 'var(--c-text-3)', fontWeight: 510, paddingRight: '12px' }}>{name}</td>
                       {weeks.map(w => {
                         const h = weeklyHours[w] ?? 0;
                         return (
-                          <td key={w} style={{ ...hmTd, textAlign: 'center', color: h > 0 ? '#7170ff' : 'rgba(255,255,255,0.1)' }}>
+                          <td key={w} style={{ ...hmTd, textAlign: 'center', color: h > 0 ? '#7170ff' : 'var(--c-border)' }}>
                             {h > 0 ? `${h}h` : '—'}
                           </td>
                         );
@@ -340,12 +350,12 @@ function EngineerProjectBreakdown() {
 function ChartCard({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
+      background: 'var(--c-card)', border: '1px solid var(--c-border)',
       borderRadius: '8px', padding: '16px', marginBottom: '24px',
     }}>
       <div style={{ marginBottom: '12px' }}>
-        <div style={{ fontSize: '13px', fontWeight: 590, color: '#f7f8f8' }}>{title}</div>
-        <div style={{ fontSize: '11px', color: '#62666d', marginTop: '2px' }}>{subtitle}</div>
+        <div style={{ fontSize: '13px', fontWeight: 590, color: 'var(--c-text-1)' }}>{title}</div>
+        <div style={{ fontSize: '11px', color: 'var(--c-text-4)', marginTop: '2px' }}>{subtitle}</div>
       </div>
       {children}
     </div>
@@ -366,7 +376,7 @@ export default function ResourceLoad() {
         <p style={sub}>Visualise engineering capacity, demand, and utilisation across themes and time.</p>
       </div>
 
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '1px solid var(--c-border)' }}>
         {([
           { key: 'overview', label: 'Overview' },
           { key: 'theme', label: 'By Theme' },
@@ -375,7 +385,7 @@ export default function ResourceLoad() {
           <button key={t.key} onClick={() => setActiveTab(t.key)} style={{
             background: 'none', border: 'none',
             borderBottom: `2px solid ${activeTab === t.key ? '#7170ff' : 'transparent'}`,
-            color: activeTab === t.key ? '#f7f8f8' : '#8a8f98',
+            color: activeTab === t.key ? 'var(--c-text-1)' : 'var(--c-text-3)',
             fontSize: '13px', fontWeight: 510,
             padding: '8px 16px', cursor: 'pointer', marginBottom: '-1px',
           }}>
@@ -396,8 +406,8 @@ export default function ResourceLoad() {
   );
 }
 
-const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: '#f7f8f8', letterSpacing: '-0.03em', margin: '4px 0' };
-const sub: React.CSSProperties = { fontSize: '13px', color: '#8a8f98', margin: 0 };
-const backBtn: React.CSSProperties = { background: 'none', border: 'none', color: '#62666d', fontSize: '13px', cursor: 'pointer', padding: '0 0 8px', display: 'block' };
-const hmTh: React.CSSProperties = { fontSize: '10px', color: '#62666d', fontWeight: 510, padding: '4px 6px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', whiteSpace: 'nowrap' };
-const hmTd: React.CSSProperties = { padding: '4px 6px', borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '11px' };
+const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: 'var(--c-text-1)', letterSpacing: '-0.03em', margin: '4px 0' };
+const sub: React.CSSProperties = { fontSize: '13px', color: 'var(--c-text-3)', margin: 0 };
+const backBtn: React.CSSProperties = { background: 'none', border: 'none', color: 'var(--c-text-4)', fontSize: '13px', cursor: 'pointer', padding: '0 0 8px', display: 'block' };
+const hmTh: React.CSSProperties = { fontSize: '10px', color: 'var(--c-text-4)', fontWeight: 510, padding: '4px 6px', textAlign: 'center', borderBottom: '1px solid var(--c-border-sm)', whiteSpace: 'nowrap' };
+const hmTd: React.CSSProperties = { padding: '4px 6px', borderBottom: '1px solid var(--c-border-xs)', fontSize: '11px' };

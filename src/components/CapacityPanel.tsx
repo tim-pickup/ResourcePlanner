@@ -60,16 +60,16 @@ export default function CapacityPanel({
 
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.02)',
-      border: '1px solid rgba(255,255,255,0.08)',
+      background: 'var(--c-card)',
+      border: '1px solid var(--c-border)',
       borderRadius: '8px',
       padding: '16px',
       marginBottom: '24px',
     }}>
       <div style={{ marginBottom: '10px' }}>
-        <div style={{ fontSize: '13px', fontWeight: 590, color: '#f7f8f8' }}>Demand Coverage</div>
-        <div style={{ fontSize: '11px', color: '#62666d', marginTop: '2px' }}>
-          Each cell shows <strong style={{ color: '#8a8f98' }}>demand / assigned / gap</strong> hours.
+        <div style={{ fontSize: '13px', fontWeight: 590, color: 'var(--c-text-1)' }}>Demand Coverage</div>
+        <div style={{ fontSize: '11px', color: 'var(--c-text-4)', marginTop: '2px' }}>
+          Each cell shows <strong style={{ color: 'var(--c-text-3)' }}>demand / assigned / gap</strong> hours.
           Green = fully covered, amber = partial, red = unassigned.
         </div>
       </div>
@@ -96,13 +96,13 @@ export default function CapacityPanel({
               return (
                 <tr key={dr.id}>
                   <td style={{ ...td, minWidth: '160px' }}>
-                    <div style={{ fontWeight: 510, color: '#d0d6e0', fontSize: '13px' }}>
+                    <div style={{ fontWeight: 510, color: 'var(--c-text-2)', fontSize: '13px' }}>
                       {skill?.name || dr.skillId}
                     </div>
                     {dr.label && (
-                      <div style={{ fontSize: '10px', color: '#8a8f98', fontStyle: 'italic' }}>{dr.label}</div>
+                      <div style={{ fontSize: '10px', color: 'var(--c-text-3)', fontStyle: 'italic' }}>{dr.label}</div>
                     )}
-                    <div style={{ fontSize: '11px', color: '#62666d' }}>{theme?.name}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--c-text-4)' }}>{theme?.name}</div>
                     <div style={{ fontSize: '10px', marginTop: '3px', color: totalGap > 0 ? '#f59e0b' : '#27a644' }}>
                       {totalDemand === 0 ? 'No demand' : totalGap > 0 ? `${totalGap}h gap remaining` : 'Fully covered'}
                     </div>
@@ -121,10 +121,10 @@ export default function CapacityPanel({
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
                             <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: color }} title={STATUS_LABEL[status]} />
-                            <div style={{ fontSize: '9px', color: '#8a8f98', lineHeight: 1.2 }}>
-                              <span style={{ color: '#62666d' }}>{demand}h</span>
+                            <div style={{ fontSize: '9px', color: 'var(--c-text-3)', lineHeight: 1.2 }}>
+                              <span style={{ color: 'var(--c-text-4)' }}>{demand}h</span>
                               {' / '}
-                              <span style={{ color: assigned > 0 ? '#d0d6e0' : '#62666d' }}>{assigned}h</span>
+                              <span style={{ color: assigned > 0 ? 'var(--c-text-2)' : 'var(--c-text-4)' }}>{assigned}h</span>
                             </div>
                             {gap > 0 && (
                               <div style={{ fontSize: '9px', color: '#f59e0b', lineHeight: 1 }}>-{gap}h</div>
@@ -141,7 +141,7 @@ export default function CapacityPanel({
         </table>
 
         <div style={{ display: 'flex', gap: '16px', marginTop: '10px', paddingTop: '8px',
-          borderTop: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap' }}>
+          borderTop: '1px solid var(--c-border-sm)', flexWrap: 'wrap' }}>
           {([
             ['covered', 'Fully Covered — all demand hours assigned'],
             ['partial', 'Partial — some hours assigned, gap remains'],
@@ -149,7 +149,7 @@ export default function CapacityPanel({
           ] as const).map(([s, label]) => (
             <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
               <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: STATUS_COLOR[s] }} />
-              <span style={{ fontSize: '11px', color: '#62666d' }}>{label}</span>
+              <span style={{ fontSize: '11px', color: 'var(--c-text-4)' }}>{label}</span>
             </div>
           ))}
         </div>
@@ -159,10 +159,10 @@ export default function CapacityPanel({
 }
 
 const th: React.CSSProperties = {
-  textAlign: 'left', fontSize: '11px', color: '#62666d', fontWeight: 510,
-  padding: '4px 8px', minWidth: '64px', borderBottom: '1px solid rgba(255,255,255,0.05)',
+  textAlign: 'left', fontSize: '11px', color: 'var(--c-text-4)', fontWeight: 510,
+  padding: '4px 8px', minWidth: '64px', borderBottom: '1px solid var(--c-border-sm)',
 };
 const td: React.CSSProperties = {
   padding: '6px 8px',
-  borderBottom: '1px solid rgba(255,255,255,0.03)',
+  borderBottom: '1px solid var(--c-border-xs)',
 };
