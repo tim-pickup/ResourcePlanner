@@ -18,8 +18,8 @@ export default function ProjectCard({ project, onClick, extra }: Props) {
     <div
       onClick={onClick}
       style={{
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid rgba(255,255,255,0.08)',
+        background: 'var(--c-card)',
+        border: '1px solid var(--c-border)',
         borderRadius: '8px',
         padding: '16px',
         cursor: onClick ? 'pointer' : 'default',
@@ -27,25 +27,25 @@ export default function ProjectCard({ project, onClick, extra }: Props) {
       }}
       onMouseEnter={e => {
         if (onClick) {
-          (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
-          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)';
+          (e.currentTarget as HTMLElement).style.background = 'var(--c-card-hover)';
+          (e.currentTarget as HTMLElement).style.borderColor = 'var(--c-border-lg)';
         }
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)';
-        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+        (e.currentTarget as HTMLElement).style.background = 'var(--c-card)';
+        (e.currentTarget as HTMLElement).style.borderColor = 'var(--c-border)';
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span style={{ fontSize: '15px', fontWeight: 590, color: '#f7f8f8', letterSpacing: '-0.02em' }}>
+            <span style={{ fontSize: '15px', fontWeight: 590, color: 'var(--c-text-1)', letterSpacing: '-0.02em' }}>
               {project.name}
             </span>
             <StatusBadge status={project.status} size="sm" />
           </div>
           {project.description && (
-            <p style={{ fontSize: '13px', color: '#8a8f98', margin: '0 0 8px', lineHeight: 1.5,
+            <p style={{ fontSize: '13px', color: 'var(--c-text-3)', margin: '0 0 8px', lineHeight: 1.5,
               overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
               {project.description}
             </p>
@@ -83,8 +83,8 @@ export default function ProjectCard({ project, onClick, extra }: Props) {
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <span style={{ fontSize: '11px', color: '#62666d', fontWeight: 510, display: 'block' }}>{label}</span>
-      <span style={{ fontSize: '13px', color: '#d0d6e0', fontWeight: 400 }}>{value}</span>
+      <span style={{ fontSize: '11px', color: 'var(--c-text-4)', fontWeight: 510, display: 'block' }}>{label}</span>
+      <span style={{ fontSize: '13px', color: 'var(--c-text-2)', fontWeight: 400 }}>{value}</span>
     </div>
   );
 }

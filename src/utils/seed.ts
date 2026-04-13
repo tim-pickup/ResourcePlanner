@@ -86,43 +86,38 @@ function wh(weeks: string[], hours: number) {
   return weeks.map(w => ({ weekCommencing: w, hours }));
 }
 
-// Week ranges for seed data
+// ─── Week ranges ──────────────────────────────────────────────────────────────
 const W8_JAN = ['2026-01-05','2026-01-12','2026-01-19','2026-01-26','2026-02-02','2026-02-09','2026-02-16','2026-02-23'];
 const W8_FEB = ['2026-02-02','2026-02-09','2026-02-16','2026-02-23','2026-03-02','2026-03-09','2026-03-16','2026-03-23'];
 const W8_APR = ['2026-04-06','2026-04-13','2026-04-20','2026-04-27','2026-05-04','2026-05-11','2026-05-18','2026-05-25'];
 const W8_MAY = ['2026-05-04','2026-05-11','2026-05-18','2026-05-25','2026-06-01','2026-06-08','2026-06-15','2026-06-22'];
 
 // proj-3 SCADA: Assessment (Mar–Apr) + Integration (Apr–May)
-const W5_MAR_APR = [
-  '2026-03-02','2026-03-09','2026-03-16','2026-03-23','2026-03-30',
-];
-const W7_APR_MAY = [
-  '2026-04-06','2026-04-13','2026-04-20','2026-04-27',
-  '2026-05-04','2026-05-11','2026-05-18',
-];
+const W5_MAR_APR = ['2026-03-02','2026-03-09','2026-03-16','2026-03-23','2026-03-30'];
+const W7_APR_MAY = ['2026-04-06','2026-04-13','2026-04-20','2026-04-27','2026-05-04','2026-05-11','2026-05-18'];
 
 // proj-6 Azure IoT: Foundation (Apr–May) + Deployment (Jun–Jul)
-const W8_APR_MAY_EXT = [
-  '2026-04-06','2026-04-13','2026-04-20','2026-04-27',
-  '2026-05-04','2026-05-11','2026-05-18','2026-05-25',
-];
-const W8_JUN_JUL = [
-  '2026-06-01','2026-06-08','2026-06-15','2026-06-22',
-  '2026-07-06','2026-07-13','2026-07-20','2026-07-27',
-];
+const W8_APR_MAY_EXT = ['2026-04-06','2026-04-13','2026-04-20','2026-04-27','2026-05-04','2026-05-11','2026-05-18','2026-05-25'];
+const W8_JUN_JUL = ['2026-06-01','2026-06-08','2026-06-15','2026-06-22','2026-07-06','2026-07-13','2026-07-20','2026-07-27'];
 
-// proj-7 OPC UA: Feb–Apr (8 weeks, rejected)
-const W8_FEB_MAR = [
-  '2026-02-16','2026-02-23','2026-03-02','2026-03-09',
-  '2026-03-16','2026-03-23','2026-03-30','2026-04-06',
-];
+// proj-7 OPC UA: Feb–Apr (rejected)
+const W8_FEB_MAR = ['2026-02-16','2026-02-23','2026-03-02','2026-03-09','2026-03-16','2026-03-23','2026-03-30','2026-04-06'];
 
-// proj-8 SQL Analytics: Apr–Jun (11 weeks, submitted)
-const W11_APR_JUN = [
-  '2026-04-13','2026-04-20','2026-04-27',
-  '2026-05-04','2026-05-11','2026-05-18','2026-05-25',
-  '2026-06-01','2026-06-08','2026-06-15','2026-06-22',
-];
+// proj-8 SQL Analytics: Apr–Jun (submitted)
+const W11_APR_JUN = ['2026-04-13','2026-04-20','2026-04-27','2026-05-04','2026-05-11','2026-05-18','2026-05-25','2026-06-01','2026-06-08','2026-06-15','2026-06-22'];
+
+// ─── Extended week ranges for new projects ────────────────────────────────────
+// proj-9 WinCC Upgrade: Apr 6 – Jun 8 (10 weeks)
+const W10_APR_JUN = ['2026-04-06','2026-04-13','2026-04-20','2026-04-27','2026-05-04','2026-05-11','2026-05-18','2026-05-25','2026-06-01','2026-06-08'];
+
+// proj-10 Data Lake: May 4 – Jul 20 (11 weeks)
+const W11_MAY_JUL = ['2026-05-04','2026-05-11','2026-05-18','2026-05-25','2026-06-01','2026-06-08','2026-06-15','2026-06-22','2026-07-06','2026-07-13','2026-07-20'];
+
+// proj-11 KPI Dashboard: Apr 13 – Jun 8 (9 weeks)
+const W9_APR_JUN2 = ['2026-04-13','2026-04-20','2026-04-27','2026-05-04','2026-05-11','2026-05-18','2026-05-25','2026-06-01','2026-06-08'];
+
+// proj-12 SCADA Next-Gen: Jun 1 – Aug 31 (13 weeks)
+const W13_JUN_AUG = ['2026-06-01','2026-06-08','2026-06-15','2026-06-22','2026-07-06','2026-07-13','2026-07-20','2026-07-27','2026-08-03','2026-08-10','2026-08-17','2026-08-24','2026-08-31'];
 
 export const SEED_PROJECTS: Project[] = [
   {
@@ -130,16 +125,14 @@ export const SEED_PROJECTS: Project[] = [
     description: 'Upgrade MOM system to support new production lines in Plant B, including Simatic S7 configuration and PLC integration.',
     startDate: '2026-05-04', endDate: '2026-06-26',
     phases: [{ id: 'phase-1-1', name: 'Implementation', startDate: '2026-05-04', endDate: '2026-06-26', fundingType: 'Group Strategy Funded' }],
-    createdByUserId: 'user-1',
-    status: 'draft', rejectionReason: '', submittedAt: null,
+    createdByUserId: 'user-1', status: 'draft', rejectionReason: '', submittedAt: null,
   },
   {
     id: 'proj-2', name: 'MI&V Analytics Platform',
     description: 'Deploy Power BI dashboards and data models for production analytics across all manufacturing sites.',
     startDate: '2026-04-06', endDate: '2026-05-29',
     phases: [{ id: 'phase-2-1', name: 'Design & Build', startDate: '2026-04-06', endDate: '2026-05-29', fundingType: 'Business Funded' }],
-    createdByUserId: 'user-1',
-    status: 'submitted', rejectionReason: '', submittedAt: '2026-03-20T09:00:00.000Z',
+    createdByUserId: 'user-1', status: 'submitted', rejectionReason: '', submittedAt: '2026-03-20T09:00:00.000Z',
   },
   {
     id: 'proj-3', name: 'SCADA System Integration',
@@ -149,24 +142,21 @@ export const SEED_PROJECTS: Project[] = [
       { id: 'phase-3-1', name: 'Assessment', startDate: '2026-03-02', endDate: '2026-04-03', fundingType: 'Business Funded' },
       { id: 'phase-3-2', name: 'Integration', startDate: '2026-04-06', endDate: '2026-05-22', fundingType: 'Sector Funded' },
     ],
-    createdByUserId: 'user-1',
-    status: 'under_review', rejectionReason: '', submittedAt: '2026-02-15T10:00:00.000Z',
+    createdByUserId: 'user-1', status: 'under_review', rejectionReason: '', submittedAt: '2026-02-15T10:00:00.000Z',
   },
   {
     id: 'proj-4', name: 'Power BI Dashboard Suite',
     description: 'Create comprehensive analytics dashboards for all manufacturing KPIs and executive reporting.',
     startDate: '2026-02-02', endDate: '2026-03-27',
     phases: [{ id: 'phase-4-1', name: 'Delivery', startDate: '2026-02-02', endDate: '2026-03-27', fundingType: 'Group Strategy Funded' }],
-    createdByUserId: 'user-1',
-    status: 'pending_approval', rejectionReason: '', submittedAt: '2026-01-20T11:00:00.000Z',
+    createdByUserId: 'user-1', status: 'pending_approval', rejectionReason: '', submittedAt: '2026-01-20T11:00:00.000Z',
   },
   {
     id: 'proj-5', name: 'PLC Modernisation Programme',
     description: 'Replace legacy PLCs with modern Siemens S7-1500 series across Line 3.',
     startDate: '2026-01-05', endDate: '2026-02-27',
     phases: [{ id: 'phase-5-1', name: 'Implementation', startDate: '2026-01-05', endDate: '2026-02-27', fundingType: 'Group Strategy Funded' }],
-    createdByUserId: 'user-1',
-    status: 'approved', rejectionReason: '', submittedAt: '2025-12-20T09:00:00.000Z',
+    createdByUserId: 'user-1', status: 'approved', rejectionReason: '', submittedAt: '2025-12-20T09:00:00.000Z',
   },
   {
     id: 'proj-6', name: 'Azure IoT Connectivity Suite',
@@ -176,29 +166,60 @@ export const SEED_PROJECTS: Project[] = [
       { id: 'phase-6-1', name: 'Foundation', startDate: '2026-04-06', endDate: '2026-05-29', fundingType: 'Group Strategy Funded' },
       { id: 'phase-6-2', name: 'Deployment', startDate: '2026-06-01', endDate: '2026-07-31', fundingType: 'Sector Funded' },
     ],
-    createdByUserId: 'user-1',
-    status: 'approved', rejectionReason: '', submittedAt: '2026-03-01T09:00:00.000Z',
+    createdByUserId: 'user-1', status: 'approved', rejectionReason: '', submittedAt: '2026-03-01T09:00:00.000Z',
   },
   {
     id: 'proj-7', name: 'OPC UA Legacy Migration',
     description: 'Migrate legacy proprietary protocols to OPC UA standard across lines 5–8.',
     startDate: '2026-02-16', endDate: '2026-04-03',
     phases: [{ id: 'phase-7-1', name: 'Migration', startDate: '2026-02-16', endDate: '2026-04-03', fundingType: 'Business Funded' }],
-    createdByUserId: 'user-1',
-    status: 'rejected', rejectionReason: 'Insufficient OPC UA engineering capacity in the target window. Emma and Frank are already committed to Azure IoT. Recommend deferring to Q3 2026.', submittedAt: '2026-02-01T10:00:00.000Z',
+    createdByUserId: 'user-1', status: 'rejected',
+    rejectionReason: 'Insufficient OPC UA engineering capacity in the target window. Emma and Frank are already committed to Azure IoT. Recommend deferring to Q3 2026.',
+    submittedAt: '2026-02-01T10:00:00.000Z',
   },
   {
     id: 'proj-8', name: 'SQL Analytics & Reporting Hub',
     description: 'Build centralised SQL analytics layer for production and quality reporting across all sites, including Power BI integration.',
     startDate: '2026-04-13', endDate: '2026-06-26',
     phases: [{ id: 'phase-8-1', name: 'Build & Deploy', startDate: '2026-04-13', endDate: '2026-06-26', fundingType: 'Business Funded' }],
-    createdByUserId: 'user-1',
-    status: 'submitted', rejectionReason: '', submittedAt: '2026-04-05T14:00:00.000Z',
+    createdByUserId: 'user-1', status: 'submitted', rejectionReason: '', submittedAt: '2026-04-05T14:00:00.000Z',
+  },
+  // ─── New projects for constraint visualisation ──────────────────────────────
+  {
+    id: 'proj-9', name: 'WinCC Upgrade Programme',
+    description: 'Upgrade WinCC SCADA screens and HMI interfaces across all production lines, including alarm management redesign and historian integration.',
+    startDate: '2026-04-06', endDate: '2026-06-12',
+    phases: [{ id: 'phase-9-1', name: 'Design & Rollout', startDate: '2026-04-06', endDate: '2026-06-12', fundingType: 'Group Strategy Funded' }],
+    createdByUserId: 'user-1', status: 'approved', rejectionReason: '', submittedAt: '2026-03-10T10:00:00.000Z',
+  },
+  {
+    id: 'proj-10', name: 'Manufacturing Data Lake',
+    description: 'Build a centralised data lake and SQL analytics layer using Azure Data Factory, incorporating Power BI reporting and data modelling for all plants.',
+    startDate: '2026-05-04', endDate: '2026-07-24',
+    phases: [{ id: 'phase-10-1', name: 'Build & Validate', startDate: '2026-05-04', endDate: '2026-07-24', fundingType: 'Sector Funded' }],
+    createdByUserId: 'user-1', status: 'submitted', rejectionReason: '', submittedAt: '2026-04-10T09:00:00.000Z',
+  },
+  {
+    id: 'proj-11', name: 'Real-time Production KPI Dashboard',
+    description: 'Design and deploy a real-time KPI dashboard suite leveraging Azure IoT telemetry and Power BI Embedded for shop-floor and executive audiences.',
+    startDate: '2026-04-13', endDate: '2026-06-12',
+    phases: [{ id: 'phase-11-1', name: 'Build & Deploy', startDate: '2026-04-13', endDate: '2026-06-12', fundingType: 'Business Funded' }],
+    createdByUserId: 'user-1', status: 'under_review', rejectionReason: '', submittedAt: '2026-04-08T11:00:00.000Z',
+  },
+  {
+    id: 'proj-12', name: 'Next-Gen SCADA Platform',
+    description: 'Strategic replacement of legacy SCADA with modern redundant architecture. Includes new MES integration layer, historian migration, and operator training programme.',
+    startDate: '2026-06-01', endDate: '2026-09-04',
+    phases: [
+      { id: 'phase-12-1', name: 'Architecture & Design', startDate: '2026-06-01', endDate: '2026-07-10', fundingType: 'Group Strategy Funded' },
+      { id: 'phase-12-2', name: 'Build & Commission', startDate: '2026-07-13', endDate: '2026-09-04', fundingType: 'Group Strategy Funded' },
+    ],
+    createdByUserId: 'user-1', status: 'draft', rejectionReason: '', submittedAt: null,
   },
 ];
 
 export const SEED_DEMAND_ROWS: DemandRow[] = [
-  // proj-1: draft (May–Jun) — single phase
+  // proj-1: draft (May–Jun)
   { id: 'dr-1-1', projectId: 'proj-1', phaseId: 'phase-1-1', skillId: 'skill-s7', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W8_MAY, 20) },
   { id: 'dr-1-2', projectId: 'proj-1', phaseId: 'phase-1-1', skillId: 'skill-plc', requiredSkillLevelId: null, weeklyHours: wh(W8_MAY, 16) },
   // proj-2: submitted (Apr–May)
@@ -213,7 +234,7 @@ export const SEED_DEMAND_ROWS: DemandRow[] = [
   // proj-5: approved (Jan–Feb)
   { id: 'dr-5-1', projectId: 'proj-5', phaseId: 'phase-5-1', skillId: 'skill-plc', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W8_JAN, 16) },
   { id: 'dr-5-2', projectId: 'proj-5', phaseId: 'phase-5-1', skillId: 'skill-s7', requiredSkillLevelId: 'sl-basic', weeklyHours: wh(W8_JAN, 8) },
-  // proj-6: approved — Phase 1 Foundation (IoT, Apr–May), Phase 2 Deployment (OPC, Jun–Jul)
+  // proj-6: approved — Phase 1 Foundation (IoT), Phase 2 Deployment (OPC)
   { id: 'dr-6-1', projectId: 'proj-6', phaseId: 'phase-6-1', skillId: 'skill-iot', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W8_APR_MAY_EXT, 32) },
   { id: 'dr-6-2', projectId: 'proj-6', phaseId: 'phase-6-2', skillId: 'skill-opc', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W8_JUN_JUL, 24) },
   // proj-7: rejected (Feb–Apr)
@@ -222,12 +243,26 @@ export const SEED_DEMAND_ROWS: DemandRow[] = [
   // proj-8: submitted (Apr–Jun)
   { id: 'dr-8-1', projectId: 'proj-8', phaseId: 'phase-8-1', skillId: 'skill-sql', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W11_APR_JUN, 24) },
   { id: 'dr-8-2', projectId: 'proj-8', phaseId: 'phase-8-1', skillId: 'skill-pbi', requiredSkillLevelId: null, weeklyHours: wh(W11_APR_JUN, 16) },
+  // proj-9: approved — WinCC + HMI (Apr–Jun)
+  { id: 'dr-9-1', projectId: 'proj-9', phaseId: 'phase-9-1', skillId: 'skill-wincc', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W10_APR_JUN, 28) },
+  { id: 'dr-9-2', projectId: 'proj-9', phaseId: 'phase-9-1', skillId: 'skill-hmi', requiredSkillLevelId: null, weeklyHours: wh(W10_APR_JUN, 20) },
+  // proj-10: submitted — SQL + DM (May–Jul) — creates conflict with proj-2 for David
+  { id: 'dr-10-1', projectId: 'proj-10', phaseId: 'phase-10-1', skillId: 'skill-sql', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W11_MAY_JUL, 24) },
+  { id: 'dr-10-2', projectId: 'proj-10', phaseId: 'phase-10-1', skillId: 'skill-dm', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W11_MAY_JUL, 16) },
+  // proj-11: under_review — Power BI + IoT (Apr–Jun) — creates unmet IoT demand (Emma fully committed)
+  { id: 'dr-11-1', projectId: 'proj-11', phaseId: 'phase-11-1', skillId: 'skill-pbi', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W9_APR_JUN2, 20) },
+  { id: 'dr-11-2', projectId: 'proj-11', phaseId: 'phase-11-1', skillId: 'skill-iot', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W9_APR_JUN2, 16) },
+  // proj-12: draft — SCADA + MES (Jun–Aug)
+  { id: 'dr-12-1', projectId: 'proj-12', phaseId: 'phase-12-1', skillId: 'skill-scada', requiredSkillLevelId: 'sl-advanced', weeklyHours: wh(W13_JUN_AUG, 28) },
+  { id: 'dr-12-2', projectId: 'proj-12', phaseId: 'phase-12-2', skillId: 'skill-mes', requiredSkillLevelId: null, weeklyHours: wh(W13_JUN_AUG, 20) },
 ];
 
 export const SEED_ASSIGNMENTS: Assignment[] = [
   // proj-3: under_review — Bob covers SCADA Phase 1 (tentative)
   { id: 'asgn-3-1', projectId: 'proj-3', demandRowId: 'dr-3-1', engineerId: 'eng-bob', status: 'tentative', weeklyHours: wh(W5_MAR_APR, 24) },
-  // proj-4: pending_approval — David covers both skills (tentative, fully committed in Feb–Mar)
+  // proj-3 Phase 2 MES — Bob covers (locked) — Bob Apr-May: 20h HMI + 16h MES + 4h BAU = 40h > 37h (OVER)
+  { id: 'asgn-3-2', projectId: 'proj-3', demandRowId: 'dr-3-2', engineerId: 'eng-bob', status: 'locked', weeklyHours: wh(W7_APR_MAY, 16) },
+  // proj-4: pending_approval — David covers both skills (tentative, fully committed Feb–Mar)
   { id: 'asgn-4-1', projectId: 'proj-4', demandRowId: 'dr-4-1', engineerId: 'eng-david', status: 'tentative', weeklyHours: wh(W8_FEB, 24) },
   { id: 'asgn-4-2', projectId: 'proj-4', demandRowId: 'dr-4-2', engineerId: 'eng-david', status: 'tentative', weeklyHours: wh(W8_FEB, 16) },
   // proj-5: approved — locked assignments (completed Jan–Feb)
@@ -239,4 +274,15 @@ export const SEED_ASSIGNMENTS: Assignment[] = [
   // proj-2: submitted — David tentative on PBI, Carol tentative on API
   { id: 'asgn-2-1', projectId: 'proj-2', demandRowId: 'dr-2-1', engineerId: 'eng-david', status: 'tentative', weeklyHours: wh(W8_APR, 24) },
   { id: 'asgn-2-2', projectId: 'proj-2', demandRowId: 'dr-2-2', engineerId: 'eng-carol', status: 'tentative', weeklyHours: wh(W8_APR, 16) },
+  // proj-9: approved — Alice WinCC 28h locked + Bob HMI 20h locked (Apr–Jun)
+  // Alice Apr-Jun: 28h WinCC + 5h BAU = 33/37 = 89% (near max)
+  { id: 'asgn-9-1', projectId: 'proj-9', demandRowId: 'dr-9-1', engineerId: 'eng-alice', status: 'locked', weeklyHours: wh(W10_APR_JUN, 28) },
+  { id: 'asgn-9-2', projectId: 'proj-9', demandRowId: 'dr-9-2', engineerId: 'eng-bob', status: 'locked', weeklyHours: wh(W10_APR_JUN, 20) },
+  // proj-1 (draft) — Alice tentative on PLC 8h May–Jun → OVER CAPACITY
+  // Alice May: 28h WinCC + 8h PLC + 5h BAU = 41h > 37h (OVER)
+  { id: 'asgn-1-1', projectId: 'proj-1', demandRowId: 'dr-1-2', engineerId: 'eng-alice', status: 'tentative', weeklyHours: wh(W8_MAY, 8) },
+  // proj-10: submitted — David SQL 20h tentative (May–Jul) → CONFLICT with proj-2 (Apr May overlap)
+  // David May 4–25: 24h PBI (proj-2) + 20h SQL (proj-10) + 5h BAU = 49h > 37h (OVER)
+  { id: 'asgn-10-1', projectId: 'proj-10', demandRowId: 'dr-10-1', engineerId: 'eng-david', status: 'tentative', weeklyHours: wh(W11_MAY_JUL, 20) },
+  { id: 'asgn-10-2', projectId: 'proj-10', demandRowId: 'dr-10-2', engineerId: 'eng-carol', status: 'tentative', weeklyHours: wh(W11_MAY_JUL, 16) },
 ];

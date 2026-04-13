@@ -3,13 +3,80 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Design Tokens ─────────────────────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --c-bg: #08090a;
+  --c-surface: #0f1011;
+  --c-tooltip: #191a1b;
+
+  /* Cards / panels */
+  --c-card: rgba(255,255,255,0.02);
+  --c-card-sm: rgba(255,255,255,0.03);
+  --c-card-hover: rgba(255,255,255,0.04);
+  --c-active-bg: rgba(255,255,255,0.06);
+
+  /* Borders */
+  --c-border-xs: rgba(255,255,255,0.03);
+  --c-border-sm: rgba(255,255,255,0.05);
+  --c-border: rgba(255,255,255,0.08);
+  --c-border-lg: rgba(255,255,255,0.1);
+
+  /* Text */
+  --c-text-1: #f7f8f8;
+  --c-text-2: #d0d6e0;
+  --c-text-3: #8a8f98;
+  --c-text-4: #62666d;
+
+  /* Inputs */
+  --c-input-bg: #191a1b;
+  --c-input-bg-alt: rgba(255,255,255,0.04);
+  --c-input-border: rgba(255,255,255,0.08);
+  --c-input-border-lg: rgba(255,255,255,0.1);
+  --c-input-text: #d0d6e0;
+
+  /* Scrollbar */
+  --c-scrollbar-track: #0f1011;
+  --c-scrollbar-thumb: #28282c;
+}
+
+[data-theme="light"] {
+  --c-bg: #f0f2f5;
+  --c-surface: #ffffff;
+  --c-tooltip: #ffffff;
+
+  --c-card: rgba(0,0,0,0.02);
+  --c-card-sm: rgba(0,0,0,0.025);
+  --c-card-hover: rgba(0,0,0,0.04);
+  --c-active-bg: rgba(0,0,0,0.05);
+
+  --c-border-xs: rgba(0,0,0,0.04);
+  --c-border-sm: rgba(0,0,0,0.06);
+  --c-border: rgba(0,0,0,0.1);
+  --c-border-lg: rgba(0,0,0,0.15);
+
+  --c-text-1: #111318;
+  --c-text-2: #374151;
+  --c-text-3: #5a6272;
+  --c-text-4: #8a8f98;
+
+  --c-input-bg: #ffffff;
+  --c-input-bg-alt: rgba(0,0,0,0.03);
+  --c-input-border: rgba(0,0,0,0.1);
+  --c-input-border-lg: rgba(0,0,0,0.15);
+  --c-input-text: #374151;
+
+  --c-scrollbar-track: #e5e7eb;
+  --c-scrollbar-thumb: #9ca3af;
+}
+
 * {
   font-feature-settings: "cv01", "ss03";
 }
 
 body {
-  background-color: #08090a;
-  color: #f7f8f8;
+  background-color: var(--c-bg);
+  color: var(--c-text-1);
   font-family: 'Inter', system-ui, sans-serif;
 }
 
@@ -24,10 +91,10 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f1011;
+  background: var(--c-scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #28282c;
+  background: var(--c-scrollbar-thumb);
   border-radius: 3px;
 }

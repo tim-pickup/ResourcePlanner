@@ -385,12 +385,12 @@ function Field({ label, children, error, required }: { label: string; children: 
   );
 }
 
-const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: '#f7f8f8', letterSpacing: '-0.03em', margin: 0 };
-const card: React.CSSProperties = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '20px' };
-const inp: React.CSSProperties = { width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#d0d6e0', fontSize: '14px', padding: '8px 12px', outline: 'none', boxSizing: 'border-box' };
-const sel: React.CSSProperties = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#d0d6e0', fontSize: '13px', padding: '6px 10px', outline: 'none' };
+const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: 'var(--c-text-1)', letterSpacing: '-0.03em', margin: 0 };
+const card: React.CSSProperties = { background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: '8px', padding: '20px' };
+const inp: React.CSSProperties = { width: '100%', background: 'var(--c-input-bg-alt)', border: '1px solid var(--c-input-border)', borderRadius: '6px', color: 'var(--c-input-text)', fontSize: '14px', padding: '8px 12px', outline: 'none', boxSizing: 'border-box' };
+const sel: React.CSSProperties = { background: 'var(--c-input-bg-alt)', border: '1px solid var(--c-input-border)', borderRadius: '6px', color: 'var(--c-input-text)', fontSize: '13px', padding: '6px 10px', outline: 'none' };
 const primaryBtn: React.CSSProperties = { background: '#5e6ad2', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px 16px', fontSize: '13px', fontWeight: 510, cursor: 'pointer' };
-const ghostBtn: React.CSSProperties = { background: 'rgba(255,255,255,0.04)', color: '#d0d6e0', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '8px 16px', fontSize: '13px', fontWeight: 510, cursor: 'pointer' };
+const ghostBtn: React.CSSProperties = { background: 'var(--c-card-hover)', color: 'var(--c-text-2)', border: '1px solid var(--c-border)', borderRadius: '6px', padding: '8px 16px', fontSize: '13px', fontWeight: 510, cursor: 'pointer' };
 const removeBtn: React.CSSProperties = { background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer' };
-const lbl: React.CSSProperties = { display: 'block', fontSize: '11px', color: '#8a8f98', fontWeight: 510, marginBottom: '4px' };
+const lbl: React.CSSProperties = { display: 'block', fontSize: '11px', color: 'var(--c-text-3)', fontWeight: 510, marginBottom: '4px' };
 const errStyle: React.CSSProperties = { fontSize: '11px', color: '#ef4444', marginTop: '3px' };

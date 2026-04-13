@@ -75,18 +75,18 @@ export default function Projects() {
               key={p.id}
               onClick={isClickable ? () => handleClick(p.id, p.status) : undefined}
               style={{
-                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
+                background: 'var(--c-card)', border: '1px solid var(--c-border)',
                 borderRadius: '8px', padding: '14px 16px',
                 cursor: isClickable ? 'pointer' : 'default',
                 transition: 'background 0.15s',
               }}
-              onMouseEnter={e => { if (isClickable) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
-              onMouseLeave={e => { if (isClickable) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)'; }}
+              onMouseEnter={e => { if (isClickable) (e.currentTarget as HTMLElement).style.background = 'var(--c-card-hover)'; }}
+              onMouseLeave={e => { if (isClickable) (e.currentTarget as HTMLElement).style.background = 'var(--c-card)'; }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '14px', fontWeight: 510, color: '#f7f8f8', marginBottom: '4px' }}>{p.name}</div>
-                  <div style={{ fontSize: '12px', color: '#62666d' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 510, color: 'var(--c-text-1)', marginBottom: '4px' }}>{p.name}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--c-text-4)' }}>
                     {p.startDate} – {p.endDate}
                     {p.phases.length === 1
                       ? ` · ${p.phases[0].fundingType}`
@@ -122,11 +122,11 @@ function FilterTab({ label, active, count, color, onSelect }: {
     <button
       onClick={onSelect}
       style={{
-        background: active ? color + '22' : 'rgba(255,255,255,0.03)',
-        border: `1px solid ${active ? color + '55' : 'rgba(255,255,255,0.08)'}`,
+        background: active ? color + '22' : 'var(--c-card-sm)',
+        border: `1px solid ${active ? color + '55' : 'var(--c-border)'}`,
         borderRadius: '6px', padding: '4px 10px', cursor: 'pointer',
         fontSize: '12px', fontWeight: 510,
-        color: active ? color : '#8a8f98',
+        color: active ? color : 'var(--c-text-3)',
         transition: 'all 0.15s',
       }}
     >
@@ -135,6 +135,6 @@ function FilterTab({ label, active, count, color, onSelect }: {
   );
 }
 
-const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: '#f7f8f8', letterSpacing: '-0.03em', margin: '4px 0' };
-const sub: React.CSSProperties = { fontSize: '13px', color: '#8a8f98', margin: 0 };
-const backBtn: React.CSSProperties = { background: 'none', border: 'none', color: '#62666d', fontSize: '13px', cursor: 'pointer', padding: '0 0 8px', display: 'block' };
+const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: 'var(--c-text-1)', letterSpacing: '-0.03em', margin: '4px 0' };
+const sub: React.CSSProperties = { fontSize: '13px', color: 'var(--c-text-3)', margin: 0 };
+const backBtn: React.CSSProperties = { background: 'none', border: 'none', color: 'var(--c-text-4)', fontSize: '13px', cursor: 'pointer', padding: '0 0 8px', display: 'block' };

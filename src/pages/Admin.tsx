@@ -14,11 +14,11 @@ export default function Admin() {
         <h1 style={h1}>Admin Configuration</h1>
         <p style={sub}>Manage themes, skills, engineers, and skill levels.</p>
       </div>
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '1px solid var(--c-border)' }}>
         {(['themes', 'skills', 'engineers', 'levels'] as Tab[]).map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
             background: 'none', border: 'none', borderBottom: `2px solid ${tab === t ? '#7170ff' : 'transparent'}`,
-            color: tab === t ? '#f7f8f8' : '#8a8f98', fontSize: '13px', fontWeight: 510,
+            color: tab === t ? 'var(--c-text-1)' : 'var(--c-text-3)', fontSize: '13px', fontWeight: 510,
             padding: '8px 16px', cursor: 'pointer', textTransform: 'capitalize', marginBottom: '-1px',
           }}>
             {t === 'levels' ? 'Skill Levels' : t.charAt(0).toUpperCase() + t.slice(1)}
@@ -61,7 +61,7 @@ function ThemesTab() {
             )}
           </div>
         ))}
-        <div style={{ display: 'flex', gap: '8px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--c-border-sm)' }}>
           <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="New theme name…" style={{ ...inlineInput, flex: 1 }} />
           <button onClick={() => { if (newName.trim()) { addTheme({ id: genId(), name: newName.trim(), isActive: true }); setNewName(''); } }} style={addBtn}>
             Add Theme
@@ -86,7 +86,7 @@ function SkillsTab() {
         const themeSkills = skills.filter(s => s.themeId === theme.id);
         return (
           <div key={theme.id} style={{ marginBottom: '20px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 590, color: '#7170ff', marginBottom: '8px' }}>{theme.name}</div>
+            <div style={{ fontSize: '13px', fontWeight: 590, color: '#7170ff', marginBottom: '8px', paddingLeft: '2px' }}>{theme.name}</div>
             <div style={card}>
               {themeSkills.map(sk => (
                 <div key={sk.id} style={rowStyle}>
@@ -165,7 +165,7 @@ function EngineerSkillEditor({
         </p>
 
         {/* Theme tabs */}
-        <div style={{ display: 'flex', gap: '4px', marginBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0' }}>
+        <div style={{ display: 'flex', gap: '4px', marginBottom: '10px', borderBottom: '1px solid var(--c-border-sm)', paddingBottom: '0' }}>
           {activeThemes.map(t => {
             const assignedCount = skills.filter(s => s.themeId === t.id && s.isActive).filter(s => formData.skills?.some(es => es.skillId === s.id)).length;
             return (
@@ -201,15 +201,15 @@ function EngineerSkillEditor({
                 <div key={sk.id} style={{
                   display: 'flex', alignItems: 'center', gap: '6px',
                   padding: '7px 10px',
-                  background: assigned ? 'rgba(94,106,210,0.08)' : 'rgba(255,255,255,0.02)',
+                  background: assigned ? 'rgba(94,106,210,0.08)' : 'var(--c-card)',
                   borderRadius: '5px',
-                  border: assigned ? '1px solid rgba(94,106,210,0.25)' : '1px solid rgba(255,255,255,0.05)',
+                  border: assigned ? '1px solid rgba(94,106,210,0.25)' : '1px solid var(--c-border-sm)',
                 }}>
                   <span style={{ fontSize: '12px', color: '#d0d6e0', flex: 1 }}>{sk.name}</span>
                   <select
                     value={assigned?.skillLevelId ?? ''}
                     onChange={e => setSkillLevel(sk.id, e.target.value)}
-                    style={{ background: '#191a1b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '4px', color: '#8a8f98', fontSize: '11px', padding: '2px 4px' }}
+                    style={{ background: 'var(--c-input-bg)', border: '1px solid var(--c-input-border)', borderRadius: '4px', color: 'var(--c-text-3)', fontSize: '11px', padding: '2px 4px' }}
                   >
                     <option value="">—</option>
                     {skillLevels.sort((a, b) => a.rank - b.rank).map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
@@ -258,7 +258,7 @@ function EngineersTab() {
   }
 
   const engineerForm = (
-    <div style={{ marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px' }}>
+    <div style={{ marginTop: '12px', borderTop: '1px solid var(--c-border-sm)', paddingTop: '12px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
         <div>
           <label style={fieldLabel}>Name *</label>
@@ -289,7 +289,7 @@ function EngineersTab() {
     <div style={{ maxWidth: '720px' }}>
       <div style={card}>
         {engineers.map(eng => (
-          <div key={eng.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: expandedId === eng.id ? '12px' : '0' }}>
+          <div key={eng.id} style={{ borderBottom: '1px solid var(--c-border-sm)', paddingBottom: expandedId === eng.id ? '12px' : '0' }}>
             <div style={{ ...rowStyle, paddingBottom: expandedId === eng.id ? '0' : '8px' }}>
               <div style={{ flex: 1 }}>
                 <span style={{ fontSize: '14px', color: eng.isActive ? '#d0d6e0' : '#62666d', fontWeight: 510 }}>{eng.name}</span>
@@ -345,15 +345,15 @@ function LevelsTab() {
   );
 }
 
-const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: '#f7f8f8', letterSpacing: '-0.03em', margin: 0 };
-const sub: React.CSSProperties = { fontSize: '13px', color: '#8a8f98', margin: '2px 0 0' };
-const card: React.CSSProperties = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '16px' };
-const rowStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' };
-const inlineInput: React.CSSProperties = { background: '#191a1b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#d0d6e0', fontSize: '13px', padding: '4px 8px', outline: 'none' };
-const fieldLabel: React.CSSProperties = { display: 'block', fontSize: '11px', fontWeight: 510, color: '#62666d', marginBottom: '4px' };
-const editBtn: React.CSSProperties = { background: 'rgba(255,255,255,0.04)', color: '#8a8f98', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer' };
+const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: 'var(--c-text-1)', letterSpacing: '-0.03em', margin: 0 };
+const sub: React.CSSProperties = { fontSize: '13px', color: 'var(--c-text-3)', margin: '2px 0 0' };
+const card: React.CSSProperties = { background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: '8px', padding: '16px' };
+const rowStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', borderBottom: '1px solid var(--c-border-xs)' };
+const inlineInput: React.CSSProperties = { background: 'var(--c-input-bg)', border: '1px solid var(--c-input-border-lg)', borderRadius: '4px', color: 'var(--c-input-text)', fontSize: '13px', padding: '4px 8px', outline: 'none' };
+const fieldLabel: React.CSSProperties = { display: 'block', fontSize: '11px', fontWeight: 510, color: 'var(--c-text-4)', marginBottom: '4px' };
+const editBtn: React.CSSProperties = { background: 'var(--c-card-hover)', color: 'var(--c-text-3)', border: '1px solid var(--c-border-sm)', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer' };
 const saveBtn: React.CSSProperties = { background: 'rgba(94,106,210,0.15)', color: '#7170ff', border: '1px solid rgba(94,106,210,0.3)', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer' };
-const cancelBtn: React.CSSProperties = { background: 'rgba(255,255,255,0.04)', color: '#62666d', border: 'none', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer' };
+const cancelBtn: React.CSSProperties = { background: 'var(--c-card-hover)', color: 'var(--c-text-4)', border: 'none', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer' };
 const addBtn: React.CSSProperties = { background: '#5e6ad2', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '12px', fontWeight: 510, cursor: 'pointer' };
 const deactivateBtn: React.CSSProperties = { background: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer' };
 const activateBtn: React.CSSProperties = { background: 'rgba(39,166,68,0.08)', color: '#4ade80', border: '1px solid rgba(39,166,68,0.15)', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer' };

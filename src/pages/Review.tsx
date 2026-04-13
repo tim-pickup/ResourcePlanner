@@ -21,7 +21,7 @@ export default function Review() {
       </div>
 
       {queue.length === 0 && (
-        <div style={{ color: '#62666d', fontSize: '14px', padding: '32px 0' }}>
+        <div style={{ color: 'var(--c-text-4)', fontSize: '14px', padding: '32px 0' }}>
           No projects in the review queue.
         </div>
       )}
@@ -35,5 +35,5 @@ export default function Review() {
   );
 }
 
-const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: '#f7f8f8', letterSpacing: '-0.03em', margin: 0 };
-const sub: React.CSSProperties = { fontSize: '13px', color: '#8a8f98', margin: '2px 0 0' };
+const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: 'var(--c-text-1)', letterSpacing: '-0.03em', margin: 0 };
+const sub: React.CSSProperties = { fontSize: '13px', color: 'var(--c-text-3)', margin: '2px 0 0' };

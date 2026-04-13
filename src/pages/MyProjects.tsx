@@ -73,10 +73,10 @@ export default function MyProjects() {
   );
 }
 
-const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: '#f7f8f8', letterSpacing: '-0.03em', margin: 0 };
-const sub: React.CSSProperties = { fontSize: '13px', color: '#8a8f98', margin: '2px 0 0' };
+const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: 'var(--c-text-1)', letterSpacing: '-0.03em', margin: 0 };
+const sub: React.CSSProperties = { fontSize: '13px', color: 'var(--c-text-3)', margin: '2px 0 0' };
 const primaryBtn: React.CSSProperties = { background: '#5e6ad2', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px 16px', fontSize: '13px', fontWeight: 510, cursor: 'pointer' };
-const editBtn: React.CSSProperties = { background: 'rgba(255,255,255,0.06)', color: '#d0d6e0', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 510, cursor: 'pointer' };
+const editBtn: React.CSSProperties = { background: 'var(--c-active-bg)', color: 'var(--c-text-2)', border: '1px solid var(--c-border)', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 510, cursor: 'pointer' };
 const reviseBtn: React.CSSProperties = { background: 'rgba(94,106,210,0.15)', color: '#7170ff', border: '1px solid rgba(94,106,210,0.3)', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 510, cursor: 'pointer' };
-const empty: React.CSSProperties = { color: '#62666d', fontSize: '14px', padding: '32px 0' };
+const empty: React.CSSProperties = { color: 'var(--c-text-4)', fontSize: '14px', padding: '32px 0' };
 const linkBtn: React.CSSProperties = { background: 'none', border: 'none', color: '#7170ff', cursor: 'pointer', fontSize: '14px', padding: 0 };

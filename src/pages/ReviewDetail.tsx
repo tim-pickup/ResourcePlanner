@@ -190,14 +190,14 @@ export default function ReviewDetail() {
             <div key={dr.id} style={card}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                 <div>
-                  <div style={{ fontSize: '14px', fontWeight: 590, color: '#f7f8f8' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 590, color: 'var(--c-text-1)' }}>
                     {skill?.name || dr.skillId}
-                    {reqLevel && <span style={{ fontSize: '12px', color: '#8a8f98', fontWeight: 400, marginLeft: '8px' }}>min {reqLevel.label}</span>}
+                    {reqLevel && <span style={{ fontSize: '12px', color: 'var(--c-text-3)', fontWeight: 400, marginLeft: '8px' }}>min {reqLevel.label}</span>}
                   </div>
                   {dr.label && (
-                    <div style={{ fontSize: '12px', color: '#8a8f98', fontStyle: 'italic', marginTop: '1px' }}>{dr.label}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--c-text-3)', fontStyle: 'italic', marginTop: '1px' }}>{dr.label}</div>
                   )}
-                  <div style={{ fontSize: '12px', color: '#62666d' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--c-text-4)' }}>
                     {theme?.name}
                     {phase && <span style={{ marginLeft: '8px', color: '#5e6ad2' }}>{phase.name}</span>}
                   </div>
@@ -206,10 +206,10 @@ export default function ReviewDetail() {
                   <div style={{ fontSize: '12px', color: gapHours === 0 ? '#27a644' : '#f59e0b', fontWeight: 590 }}>
                     {gapHours === 0 ? '✓ Fully covered' : `${gapHours}h gap remaining`}
                   </div>
-                  <div style={{ fontSize: '11px', color: '#62666d', marginTop: '2px' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--c-text-4)', marginTop: '2px' }}>
                     {assignedHours}h of {totalDemandHours}h assigned
                   </div>
-                  <div style={{ height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', marginTop: '5px', overflow: 'hidden' }}>
+                  <div style={{ height: '4px', background: 'var(--c-border)', borderRadius: '2px', marginTop: '5px', overflow: 'hidden' }}>
                     <div style={{
                       height: '100%', borderRadius: '2px', width: `${coverPct}%`,
                       background: coverPct === 100 ? '#27a644' : coverPct > 0 ? '#f59e0b' : '#ef4444',
@@ -221,7 +221,7 @@ export default function ReviewDetail() {
 
               {rowAssignments.length > 0 && (
                 <div style={{ marginBottom: '12px' }}>
-                  <div style={{ fontSize: '11px', color: '#8a8f98', fontWeight: 510, textTransform: 'uppercase', marginBottom: '6px' }}>Assigned</div>
+                  <div style={{ fontSize: '11px', color: 'var(--c-text-3)', fontWeight: 510, textTransform: 'uppercase', marginBottom: '6px' }}>Assigned</div>
                   {rowAssignments.map(a => {
                     const eng = engineers.find(e => e.id === a.engineerId);
                     const aTotal = a.weeklyHours.reduce((s, wh) => s + wh.hours, 0);
@@ -233,7 +233,7 @@ export default function ReviewDetail() {
                         background: isPartial ? 'rgba(245,158,11,0.08)' : 'rgba(39,166,68,0.1)',
                         border: `1px solid ${isPartial ? 'rgba(245,158,11,0.2)' : 'rgba(39,166,68,0.15)'}`,
                         borderRadius: '6px', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '13px', color: '#d0d6e0' }}>{eng?.name}</span>
+                        <span style={{ fontSize: '13px', color: 'var(--c-text-2)' }}>{eng?.name}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '11px', color: isPartial ? '#f59e0b' : '#8a8f98' }}>
                             {aTotal}h total {isPartial ? '(partial)' : ''}
@@ -246,11 +246,11 @@ export default function ReviewDetail() {
                 </div>
               )}
 
-              <div style={{ fontSize: '11px', color: '#8a8f98', fontWeight: 510, textTransform: 'uppercase', marginBottom: '6px' }}>
+              <div style={{ fontSize: '11px', color: 'var(--c-text-3)', fontWeight: 510, textTransform: 'uppercase', marginBottom: '6px' }}>
                 Available Engineers ({qualified.filter(e => !assignedIds.has(e.id)).length})
               </div>
               {qualified.length === 0 && (
-                <div style={{ fontSize: '13px', color: '#62666d' }}>No qualified engineers for this skill.</div>
+                <div style={{ fontSize: '13px', color: 'var(--c-text-4)' }}>No qualified engineers for this skill.</div>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {qualified.filter(e => !assignedIds.has(e.id)).map(eng => {
@@ -281,16 +281,16 @@ export default function ReviewDetail() {
                   return (
                     <div key={eng.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                       padding: '8px 10px',
-                      background: 'rgba(255,255,255,0.02)',
-                      border: `1px solid ${wouldFullyCover ? 'rgba(39,166,68,0.2)' : minAvail === 0 ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)'}`,
+                      background: 'var(--c-card)',
+                      border: `1px solid ${wouldFullyCover ? 'rgba(39,166,68,0.2)' : minAvail === 0 ? 'rgba(239,68,68,0.15)' : 'var(--c-border-sm)'}`,
                       borderRadius: '6px' }}>
                       <div>
-                        <span style={{ fontSize: '13px', color: '#d0d6e0', fontWeight: 510 }}>{eng.name}</span>
-                        <span style={{ fontSize: '11px', color: '#8a8f98', marginLeft: '8px' }}>{engLevel?.label}</span>
+                        <span style={{ fontSize: '13px', color: 'var(--c-text-2)', fontWeight: 510 }}>{eng.name}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--c-text-3)', marginLeft: '8px' }}>{engLevel?.label}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '11px', color: minAvail === 0 ? '#ef4444' : '#62666d' }}>
+                          <div style={{ fontSize: '11px', color: minAvail === 0 ? '#ef4444' : 'var(--c-text-4)' }}>
                             {availDisplay} available
                           </div>
                           {wouldFullyCover && gapHours > 0 && (
@@ -314,12 +314,12 @@ export default function ReviewDetail() {
                               placeholder="h/wk"
                               title="Optional: specify hours per week (leave blank for auto)"
                               style={{
-                                width: '56px', background: 'rgba(255,255,255,0.04)',
-                                border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px',
-                                color: '#d0d6e0', fontSize: '11px', padding: '3px 6px', outline: 'none', textAlign: 'center',
+                                width: '56px', background: 'var(--c-input-bg-alt)',
+                                border: '1px solid var(--c-input-border)', borderRadius: '4px',
+                                color: 'var(--c-input-text)', fontSize: '11px', padding: '3px 6px', outline: 'none', textAlign: 'center',
                               }}
                             />
-                            <span style={{ fontSize: '10px', color: '#62666d' }}>h/wk</span>
+                            <span style={{ fontSize: '10px', color: 'var(--c-text-4)' }}>h/wk</span>
                           </div>
                         )}
                         <button
@@ -343,12 +343,12 @@ export default function ReviewDetail() {
   );
 }
 
-const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: '#f7f8f8', letterSpacing: '-0.03em', margin: '4px 0 4px' };
-const sub: React.CSSProperties = { fontSize: '13px', color: '#8a8f98', margin: 0 };
-const hint: React.CSSProperties = { fontSize: '12px', color: '#62666d', margin: '-6px 0 12px' };
-const backBtn: React.CSSProperties = { background: 'none', border: 'none', color: '#62666d', fontSize: '13px', cursor: 'pointer', padding: '0 0 8px', display: 'block' };
+const h1: React.CSSProperties = { fontSize: '24px', fontWeight: 590, color: 'var(--c-text-1)', letterSpacing: '-0.03em', margin: '4px 0 4px' };
+const sub: React.CSSProperties = { fontSize: '13px', color: 'var(--c-text-3)', margin: 0 };
+const hint: React.CSSProperties = { fontSize: '12px', color: 'var(--c-text-4)', margin: '-6px 0 12px' };
+const backBtn: React.CSSProperties = { background: 'none', border: 'none', color: 'var(--c-text-4)', fontSize: '13px', cursor: 'pointer', padding: '0 0 8px', display: 'block' };
 const primaryBtn: React.CSSProperties = { background: '#5e6ad2', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px 16px', fontSize: '13px', fontWeight: 510 };
-const sectionHead: React.CSSProperties = { fontSize: '13px', fontWeight: 590, color: '#8a8f98', letterSpacing: '0.05em', textTransform: 'uppercase', margin: '0 0 6px' };
-const card: React.CSSProperties = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '16px' };
+const sectionHead: React.CSSProperties = { fontSize: '13px', fontWeight: 590, color: 'var(--c-text-3)', letterSpacing: '0.05em', textTransform: 'uppercase', margin: '0 0 6px' };
+const card: React.CSSProperties = { background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: '8px', padding: '16px' };
 const removeBtn: React.CSSProperties = { background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer' };
 const assignBtn: React.CSSProperties = { background: 'rgba(94,106,210,0.15)', color: '#7170ff', border: '1px solid rgba(94,106,210,0.3)', borderRadius: '4px', padding: '4px 10px', fontSize: '12px', fontWeight: 510, cursor: 'pointer' };

@@ -46,25 +46,25 @@ const cell: React.CSSProperties = {
   padding: '6px 8px',
   textAlign: 'center',
   fontSize: '12px',
-  borderRight: '1px solid rgba(255,255,255,0.05)',
-  borderBottom: '1px solid rgba(255,255,255,0.05)',
+  borderRight: '1px solid var(--c-border-sm)',
+  borderBottom: '1px solid var(--c-border-sm)',
   whiteSpace: 'nowrap',
 };
 
 const headerCell: React.CSSProperties = {
   ...cell,
-  color: '#62666d',
+  color: 'var(--c-text-4)',
   fontWeight: 510,
-  background: '#0f1011',
+  background: 'var(--c-surface)',
   position: 'sticky',
   top: 0,
 };
 
 const modeBtn = (active: boolean): React.CSSProperties => ({
-  background: active ? 'rgba(94,106,210,0.2)' : 'rgba(255,255,255,0.04)',
-  border: `1px solid ${active ? 'rgba(94,106,210,0.5)' : 'rgba(255,255,255,0.08)'}`,
+  background: active ? 'rgba(94,106,210,0.2)' : 'var(--c-card-hover)',
+  border: `1px solid ${active ? 'rgba(94,106,210,0.5)' : 'var(--c-border)'}`,
   borderRadius: '4px',
-  color: active ? '#7170ff' : '#8a8f98',
+  color: active ? '#7170ff' : 'var(--c-text-3)',
   fontSize: '11px',
   fontWeight: 510,
   padding: '3px 10px',
@@ -78,7 +78,7 @@ export default function WeeklyGrid({
   const [viewMode, setViewMode] = useState<ViewMode>('week');
 
   if (rows.length === 0 || weeks.length === 0) {
-    return <div style={{ color: '#62666d', fontSize: '13px', padding: '16px 0' }}>No skills selected.</div>;
+    return <div style={{ color: 'var(--c-text-4)', fontSize: '13px', padding: '16px 0' }}>No skills selected.</div>;
   }
 
   const getHours = (rowId: string, week: string) => weeklyHours[rowId]?.[week] ?? 0;
@@ -105,20 +105,20 @@ export default function WeeklyGrid({
     <div>
       {/* Zoom controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-        <span style={{ fontSize: '11px', color: '#62666d' }}>View:</span>
+        <span style={{ fontSize: '11px', color: 'var(--c-text-4)' }}>View:</span>
         {(['week', 'month', 'quarter'] as ViewMode[]).map(m => (
           <button key={m} style={modeBtn(viewMode === m)} onClick={() => setViewMode(m)}>
             {m.charAt(0).toUpperCase() + m.slice(1)}
           </button>
         ))}
         {isAggregated && (
-          <span style={{ fontSize: '11px', color: '#62666d', marginLeft: '4px' }}>
+          <span style={{ fontSize: '11px', color: 'var(--c-text-4)', marginLeft: '4px' }}>
             ({displayCols.length} {viewMode}s — read only in aggregated view)
           </span>
         )}
       </div>
 
-      <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid var(--c-border)' }}>
         <table style={{ borderCollapse: 'collapse', minWidth: '100%', tableLayout: 'auto' }}>
           <thead>
             <tr>
@@ -130,19 +130,19 @@ export default function WeeklyGrid({
                   {col.label}
                 </th>
               ))}
-              {showTotals && <th style={{ ...headerCell, minWidth: '64px', color: '#8a8f98' }}>Total</th>}
+              {showTotals && <th style={{ ...headerCell, minWidth: '64px', color: 'var(--c-text-3)' }}>Total</th>}
             </tr>
           </thead>
           <tbody>
             {rows.map(row => (
               <tr key={row.id}>
-                <td style={{ ...cell, textAlign: 'left', background: '#0f1011', position: 'sticky', left: 0, zIndex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 510, color: '#d0d6e0' }}>{row.skillName}</div>
-                  <div style={{ fontSize: '11px', color: '#62666d' }}>
+                <td style={{ ...cell, textAlign: 'left', background: 'var(--c-surface)', position: 'sticky', left: 0, zIndex: 1 }}>
+                  <div style={{ fontSize: '13px', fontWeight: 510, color: 'var(--c-text-2)' }}>{row.skillName}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--c-text-4)' }}>
                     {row.themeName}{row.requiredLevelLabel ? ` · min ${row.requiredLevelLabel}` : ''}
                   </div>
                   {row.description && (
-                    <div style={{ fontSize: '10px', color: '#8a8f98', marginTop: '2px', fontStyle: 'italic' }}>{row.description}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--c-text-3)', marginTop: '2px', fontStyle: 'italic' }}>{row.description}</div>
                   )}
                 </td>
                 {displayCols.map(col => {
@@ -150,7 +150,7 @@ export default function WeeklyGrid({
                   return (
                     <td key={col.key} style={{ ...cell, background: val > 0 ? 'rgba(94,106,210,0.06)' : 'transparent' }}>
                       {(readOnly || isAggregated) ? (
-                        <span style={{ color: val > 0 ? '#d0d6e0' : '#3e3e44' }}>{val || '—'}</span>
+                        <span style={{ color: val > 0 ? 'var(--c-text-2)' : 'var(--c-border-lg)' }}>{val || '—'}</span>
                       ) : (
                         <input
                           type="number"
@@ -163,8 +163,8 @@ export default function WeeklyGrid({
                             width: '52px',
                             background: 'transparent',
                             border: 'none',
-                            borderBottom: '1px solid rgba(255,255,255,0.1)',
-                            color: '#d0d6e0',
+                            borderBottom: '1px solid var(--c-border-lg)',
+                            color: 'var(--c-text-2)',
                             fontSize: '12px',
                             textAlign: 'center',
                             padding: '2px 4px',
@@ -176,7 +176,7 @@ export default function WeeklyGrid({
                   );
                 })}
                 {showTotals && (
-                  <td style={{ ...cell, fontWeight: 590, color: '#f7f8f8', background: 'rgba(255,255,255,0.02)' }}>
+                  <td style={{ ...cell, fontWeight: 590, color: 'var(--c-text-1)', background: 'var(--c-card)' }}>
                     {rowTotal(row.id)}h
                   </td>
                 )}
@@ -184,16 +184,16 @@ export default function WeeklyGrid({
             ))}
             {showTotals && (
               <tr>
-                <td style={{ ...cell, textAlign: 'left', background: '#0f1011', position: 'sticky', left: 0, zIndex: 1,
-                  fontSize: '11px', fontWeight: 590, color: '#8a8f98' }}>
+                <td style={{ ...cell, textAlign: 'left', background: 'var(--c-surface)', position: 'sticky', left: 0, zIndex: 1,
+                  fontSize: '11px', fontWeight: 590, color: 'var(--c-text-3)' }}>
                   {isAggregated ? `${viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} Total` : 'Weekly Total'}
                 </td>
                 {displayCols.map(col => (
-                  <td key={col.key} style={{ ...cell, fontWeight: 590, color: '#8a8f98', background: 'rgba(255,255,255,0.02)' }}>
+                  <td key={col.key} style={{ ...cell, fontWeight: 590, color: 'var(--c-text-3)', background: 'var(--c-card)' }}>
                     {colTotal(col.weeks) || '—'}
                   </td>
                 ))}
-                <td style={{ ...cell, fontWeight: 590, color: '#f7f8f8', background: 'rgba(94,106,210,0.1)' }}>
+                <td style={{ ...cell, fontWeight: 590, color: 'var(--c-text-1)', background: 'rgba(94,106,210,0.1)' }}>
                   {grandTotal}h
                 </td>
               </tr>
