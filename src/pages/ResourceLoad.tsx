@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
-import { formatWeekLabel } from '../utils/dates';
+import { formatWeekLabel, groupWeeksByMonth } from '../utils/dates';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, Legend,
   ResponsiveContainer, CartesianGrid,
@@ -9,6 +9,13 @@ import {
 import { Assignment } from '../types';
 import { useTheme, getChartColors } from '../store/theme';
 import { CHART_LINE_COLORS, getThemeLineColors } from '../utils/chartColors';
+
+type ViewPeriod = 'week' | 'month';
+
+function getPeriods(weeks: string[], viewPeriod: ViewPeriod) {
+  if (viewPeriod === 'week') return weeks.map(w => ({ key: w, label: formatWeekLabel(w), weeks: [w] }));
+  return groupWeeksByMonth(weeks);
+}
 
 function getEngineerWeeklyCommitted(
   engineerId: string,
@@ -26,7 +33,7 @@ function getEngineerWeeklyCommitted(
 
 // ─── Overview ────────────────────────────────────────────────────────────────
 
-function OverallCapacityDemandChart() {
+function OverallCapacityDemandChart({ viewPeriod }: { viewPeriod: ViewPeriod }) {
   const { engineers, demandRows, assignments } = useStore();
   const { theme } = useTheme();
   const cc = getChartColors(theme);
@@ -41,18 +48,22 @@ function OverallCapacityDemandChart() {
   const weeks = [...weekSet].sort();
   if (weeks.length === 0) return null;
 
-  const data = weeks.map(w => {
-    const projectDemand = demandRows.reduce((s, r) =>
-      s + (r.weeklyHours.find(h => h.weekCommencing === w)?.hours ?? 0), 0);
-    const lockedProjectHours = activeEngineers.reduce((s, e) =>
-      s + getEngineerWeeklyCommitted(e.id, w, assignments, 'locked'), 0);
+  const periods = getPeriods(weeks, viewPeriod);
+
+  const data = periods.map(p => {
+    const weekCount = p.weeks.length;
+    const projectDemand = p.weeks.reduce((s, w) =>
+      s + demandRows.reduce((ss, r) =>
+        ss + (r.weeklyHours.find(h => h.weekCommencing === w)?.hours ?? 0), 0), 0);
+    const lockedProjectHours = p.weeks.reduce((s, w) =>
+      s + activeEngineers.reduce((ss, e) =>
+        ss + getEngineerWeeklyCommitted(e.id, w, assignments, 'locked'), 0), 0);
     return {
-      week: formatWeekLabel(w),
-      capacity: totalCap,
-      bau: totalBau,
+      week: p.label,
+      capacity: totalCap * weekCount,
+      bau: totalBau * weekCount,
+      committed: totalBau * weekCount + lockedProjectHours,
       projectDemand,
-      // Stacked: committed = BAU + locked project hours (always >= BAU)
-      committed: totalBau + lockedProjectHours,
     };
   });
 
@@ -64,12 +75,17 @@ function OverallCapacityDemandChart() {
     color: cc.tooltipText,
   };
 
+  const xInterval = viewPeriod === 'month' ? 0 : 3;
+
   return (
-    <ChartCard title="Total Capacity vs Demand" subtitle="Committed = BAU + locked project hours (stacked). Capacity = total weekly hours across all engineers.">
+    <ChartCard
+      title="Total Capacity vs Demand"
+      subtitle={`${viewPeriod === 'month' ? 'Monthly totals' : 'Weekly hours'}. Committed = BAU + locked project hours (stacked above BAU).`}
+    >
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={data} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={cc.grid} />
-          <XAxis dataKey="week" tick={{ fontSize: 9, fill: cc.tick }} tickLine={false} axisLine={false} interval={3} />
+          <XAxis dataKey="week" tick={{ fontSize: 9, fill: cc.tick }} tickLine={false} axisLine={false} interval={xInterval} />
           <YAxis tick={{ fontSize: 10, fill: cc.tick }} tickLine={false} axisLine={false} />
           <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: cc.cursor }} />
           <Legend wrapperStyle={{ fontSize: '10px', color: cc.legendText }} />
@@ -85,7 +101,7 @@ function OverallCapacityDemandChart() {
 
 // ─── By Theme ────────────────────────────────────────────────────────────────
 
-function ThemeCapacityChart() {
+function ThemeCapacityChart({ viewPeriod }: { viewPeriod: ViewPeriod }) {
   const { engineers, demandRows, skills, themes, assignments, projects } = useStore();
   const { theme } = useTheme();
   const cc = getChartColors(theme);
@@ -95,29 +111,29 @@ function ThemeCapacityChart() {
   const weeks = [...weekSet].sort();
   if (weeks.length === 0) return null;
 
+  const periods = getPeriods(weeks, viewPeriod);
   const activeThemes = themes.filter(t => t.isActive);
 
-  const data = weeks.map(w => {
-    const point: Record<string, string | number> = { week: formatWeekLabel(w) };
+  const data = periods.map(p => {
+    const weekCount = p.weeks.length;
+    const point: Record<string, string | number> = { week: p.label };
     activeThemes.forEach(t => {
       const themeEngineers = engineers.filter(e => e.isActive && e.themeIds.includes(t.id));
       const themeSkillIds = new Set(skills.filter(s => s.themeId === t.id).map(s => s.id));
       const cap = themeEngineers.reduce((s, e) => s + e.weeklyCapacityHours, 0);
       const themeBAU = themeEngineers.reduce((s, e) => s + (e.bauSupportHours ?? 0), 0);
-      const demand = demandRows
-        .filter(r => themeSkillIds.has(r.skillId))
-        .reduce((s, r) => s + (r.weeklyHours.find(h => h.weekCommencing === w)?.hours ?? 0), 0);
-      const lockedProjectHours = assignments
-        .filter(a => a.status === 'locked')
-        .reduce((s, a) => {
+      const demand = p.weeks.reduce((s, w) =>
+        s + demandRows.filter(r => themeSkillIds.has(r.skillId))
+          .reduce((ss, r) => ss + (r.weeklyHours.find(h => h.weekCommencing === w)?.hours ?? 0), 0), 0);
+      const lockedProjectHours = p.weeks.reduce((s, w) =>
+        s + assignments.filter(a => a.status === 'locked').reduce((ss, a) => {
           const dr = demandRows.find(r => r.id === a.demandRowId);
-          if (!dr || !themeSkillIds.has(dr.skillId)) return s;
-          return s + (a.weeklyHours.find(h => h.weekCommencing === w)?.hours ?? 0);
-        }, 0);
-      point[`${t.id}_cap`] = cap;
+          if (!dr || !themeSkillIds.has(dr.skillId)) return ss;
+          return ss + (a.weeklyHours.find(h => h.weekCommencing === w)?.hours ?? 0);
+        }, 0), 0);
+      point[`${t.id}_cap`] = cap * weekCount;
       point[`${t.id}_demand`] = demand;
-      // Stacked: committed = themeBAU + locked project hours for this theme
-      point[`${t.id}_committed`] = themeBAU + lockedProjectHours;
+      point[`${t.id}_committed`] = themeBAU * weekCount + lockedProjectHours;
     });
     return point;
   });
@@ -130,6 +146,8 @@ function ThemeCapacityChart() {
     color: cc.tooltipText,
   };
 
+  const xInterval = viewPeriod === 'month' ? 0 : 3;
+
   return (
     <div>
       {activeThemes.map(t => {
@@ -140,11 +158,12 @@ function ThemeCapacityChart() {
         );
 
         return (
-          <ChartCard key={t.id} title={`${t.name} — Capacity vs Demand`} subtitle="Hours per week for this theme's engineers and projects. Committed = BAU + locked hours.">
+          <ChartCard key={t.id} title={`${t.name} — Capacity vs Demand`}
+            subtitle={`${viewPeriod === 'month' ? 'Monthly totals' : 'Hours per week'} for this theme's engineers and projects. Committed = BAU + locked hours.`}>
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={data} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={cc.grid} />
-                <XAxis dataKey="week" tick={{ fontSize: 9, fill: cc.tick }} tickLine={false} axisLine={false} interval={3} />
+                <XAxis dataKey="week" tick={{ fontSize: 9, fill: cc.tick }} tickLine={false} axisLine={false} interval={xInterval} />
                 <YAxis tick={{ fontSize: 10, fill: cc.tick }} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: cc.cursor }} />
                 <Legend wrapperStyle={{ fontSize: '10px', color: cc.legendText }} />
@@ -191,7 +210,7 @@ function ThemeCapacityChart() {
 
 // ─── By Skill ────────────────────────────────────────────────────────────────
 
-function SkillDemandView() {
+function SkillDemandView({ viewPeriod }: { viewPeriod: ViewPeriod }) {
   const { skills, themes, demandRows, assignments, projects, engineers } = useStore();
 
   const RELEVANT = new Set(['submitted', 'under_review', 'pending_approval', 'approved']);
@@ -212,22 +231,22 @@ function SkillDemandView() {
     );
   }
 
+  const periods = getPeriods(weeks, viewPeriod);
   const skillsWithDemand = skills.filter(s => activeDemandRows.some(r => r.skillId === s.id));
 
-  function getDemand(skillId: string, week: string): number {
-    return activeDemandRows
-      .filter(r => r.skillId === skillId)
-      .reduce((s, r) => s + (r.weeklyHours.find(wh => wh.weekCommencing === week)?.hours ?? 0), 0);
+  function getDemandForWeeks(skillId: string, periodWeeks: string[]): number {
+    return periodWeeks.reduce((s, w) =>
+      s + activeDemandRows.filter(r => r.skillId === skillId)
+        .reduce((ss, r) => ss + (r.weeklyHours.find(wh => wh.weekCommencing === w)?.hours ?? 0), 0), 0);
   }
 
-  function getCommitted(skillId: string, week: string): number {
-    return assignments
-      .filter(a => a.status === 'locked')
-      .reduce((s, a) => {
+  function getCommittedForWeeks(skillId: string, periodWeeks: string[]): number {
+    return periodWeeks.reduce((s, w) =>
+      s + assignments.filter(a => a.status === 'locked').reduce((ss, a) => {
         const dr = demandRows.find(r => r.id === a.demandRowId && r.skillId === skillId);
-        if (!dr) return s;
-        return s + (a.weeklyHours.find(wh => wh.weekCommencing === week)?.hours ?? 0);
-      }, 0);
+        if (!dr) return ss;
+        return ss + (a.weeklyHours.find(wh => wh.weekCommencing === w)?.hours ?? 0);
+      }, 0), 0);
   }
 
   function cellBg(demand: number, committed: number): string {
@@ -238,17 +257,17 @@ function SkillDemandView() {
     return 'rgba(239,68,68,0.18)';
   }
 
-  // Summary — sorted by total gap descending
+  // Summary always uses all weeks regardless of view (total picture)
   const summary = skillsWithDemand.map(s => {
     const theme = themes.find(t => t.id === s.themeId);
-    const totalDemand = weeks.reduce((sum, w) => sum + getDemand(s.id, w), 0);
-    const totalCommitted = weeks.reduce((sum, w) => sum + getCommitted(s.id, w), 0);
+    const totalDemand = getDemandForWeeks(s.id, weeks);
+    const totalCommitted = getCommittedForWeeks(s.id, weeks);
     const gap = Math.max(0, totalDemand - totalCommitted);
-    const demandWeeks = weeks.filter(w => getDemand(s.id, w) > 0);
+    const demandWeeks = weeks.filter(w => getDemandForWeeks(s.id, [w]) > 0);
     const peakGapWeek = demandWeeks.length > 0
       ? demandWeeks.reduce((best, w) => {
-          const g = getDemand(s.id, w) - getCommitted(s.id, w);
-          const bg = getDemand(s.id, best) - getCommitted(s.id, best);
+          const g = getDemandForWeeks(s.id, [w]) - getCommittedForWeeks(s.id, [w]);
+          const bg = getDemandForWeeks(s.id, [best]) - getCommittedForWeeks(s.id, [best]);
           return g > bg ? w : best;
         }, demandWeeks[0])
       : null;
@@ -256,12 +275,14 @@ function SkillDemandView() {
     return { skill: s, theme, totalDemand, totalCommitted, gap, peakGapWeek, qualifiedCount };
   }).sort((a, b) => b.gap - a.gap);
 
+  const periodLabel = viewPeriod === 'month' ? 'month' : 'week';
+
   return (
     <div>
       {/* Heatmap */}
       <ChartCard
         title="Skill Demand vs Committed — Timeline"
-        subtitle="Demand from all submitted/approved projects vs locked commitments. Shows demand / ✓committed / −gap per week."
+        subtitle={`${viewPeriod === 'month' ? 'Monthly totals' : 'Per week'}: demand from all submitted/approved projects vs locked commitments.`}
       >
         <div style={{ overflowX: 'auto' }}>
           <table style={{ borderCollapse: 'collapse', fontSize: '11px' }}>
@@ -270,8 +291,8 @@ function SkillDemandView() {
                 <th style={{ ...hmTh, textAlign: 'left', minWidth: '160px', position: 'sticky', left: 0, background: 'var(--c-surface)', zIndex: 2 }}>
                   Skill
                 </th>
-                {weeks.map(w => (
-                  <th key={w} style={{ ...hmTh, minWidth: '60px' }}>{formatWeekLabel(w)}</th>
+                {periods.map(p => (
+                  <th key={p.key} style={{ ...hmTh, minWidth: viewPeriod === 'month' ? '72px' : '60px' }}>{p.label}</th>
                 ))}
               </tr>
             </thead>
@@ -284,15 +305,15 @@ function SkillDemandView() {
                       <div style={{ fontWeight: 510, color: 'var(--c-text-2)', fontSize: '12px' }}>{skill.name}</div>
                       <div style={{ fontSize: '10px', color: 'var(--c-text-4)' }}>{theme?.name}</div>
                     </td>
-                    {weeks.map(w => {
-                      const demand = getDemand(skill.id, w);
-                      const committed = getCommitted(skill.id, w);
+                    {periods.map(p => {
+                      const demand = getDemandForWeeks(skill.id, p.weeks);
+                      const committed = getCommittedForWeeks(skill.id, p.weeks);
                       const gap = demand - committed;
                       return (
                         <td
-                          key={w}
+                          key={p.key}
                           style={{ ...hmTd, background: cellBg(demand, committed), textAlign: 'center', padding: '5px 4px' }}
-                          title={demand > 0 ? `${skill.name} w/c ${w}: ${demand}h demand, ${committed}h committed${gap > 0 ? `, ${gap}h gap` : ', covered'}` : undefined}
+                          title={demand > 0 ? `${skill.name} ${p.label}: ${demand}h demand, ${committed}h committed${gap > 0 ? `, ${gap}h gap` : ', covered'}` : undefined}
                         >
                           {demand > 0 ? (
                             <div style={{ lineHeight: 1.4 }}>
@@ -315,7 +336,7 @@ function SkillDemandView() {
         <div style={{ display: 'flex', gap: '14px', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--c-border-sm)', flexWrap: 'wrap' }}>
           {[
             { color: 'rgba(39,166,68,0.15)', label: 'Covered — committed meets demand' },
-            { color: 'rgba(245,158,11,0.18)', label: 'Partial gap — < 50% unfilled' },
+            { color: 'rgba(245,158,11,0.18)', label: `Partial gap — < 50% unfilled` },
             { color: 'rgba(239,68,68,0.18)', label: 'Significant gap — ≥ 50% unfilled' },
           ].map(({ color, label }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -326,10 +347,10 @@ function SkillDemandView() {
         </div>
       </ChartCard>
 
-      {/* Risk summary */}
+      {/* Risk summary — always totals, independent of view period */}
       <ChartCard
         title="Skill Risk Summary"
-        subtitle="Skills ranked by total unfilled gap. Demand includes all submitted, under review, pending approval, and approved projects."
+        subtitle={`Total exposure across all ${periodLabel}s. Skills ranked by unfilled gap. Demand includes submitted, under review, pending and approved projects.`}
       >
         <div style={{ overflowX: 'auto' }}>
           <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '12px' }}>
@@ -380,7 +401,7 @@ function SkillDemandView() {
 
 // ─── By Engineer ─────────────────────────────────────────────────────────────
 
-function EngineerUtilizationHeatmap() {
+function EngineerUtilizationHeatmap({ viewPeriod }: { viewPeriod: ViewPeriod }) {
   const { engineers, assignments } = useStore();
 
   const weekSet = new Set<string>();
@@ -388,11 +409,14 @@ function EngineerUtilizationHeatmap() {
   const weeks = [...weekSet].sort().slice(0, 24);
   if (weeks.length === 0) return null;
 
-  function getUtilPct(engineerId: string, week: string, totalCap: number, bauHours: number): number {
+  const periods = getPeriods(weeks, viewPeriod);
+
+  function getUtilPct(engineerId: string, periodWeeks: string[], totalCap: number, bauHours: number): number {
     if (totalCap === 0) return 0;
-    const projectCommitted = getEngineerWeeklyCommitted(engineerId, week, assignments, 'all');
-    // % of TOTAL capacity including BAU
-    return Math.min(120, Math.round((projectCommitted + bauHours) / totalCap * 100));
+    const weekCount = periodWeeks.length;
+    const projectCommitted = periodWeeks.reduce((s, w) =>
+      s + getEngineerWeeklyCommitted(engineerId, w, assignments, 'all'), 0);
+    return Math.min(120, Math.round((projectCommitted + bauHours * weekCount) / (totalCap * weekCount) * 100));
   }
 
   function utilColor(pct: number): string {
@@ -403,13 +427,16 @@ function EngineerUtilizationHeatmap() {
   }
 
   return (
-    <ChartCard title="Engineer Utilization Heat Map" subtitle="% of total weekly capacity (project hours + BAU). Over 85% = near or over capacity.">
+    <ChartCard
+      title="Engineer Utilization Heat Map"
+      subtitle={`% of total ${viewPeriod === 'month' ? 'monthly' : 'weekly'} capacity (project hours + BAU). Over 85% = near or over capacity.`}
+    >
       <div style={{ overflowX: 'auto' }}>
         <table style={{ borderCollapse: 'collapse', fontSize: '11px' }}>
           <thead>
             <tr>
               <th style={{ ...hmTh, textAlign: 'left', minWidth: '130px', position: 'sticky', left: 0, background: 'var(--c-surface)', zIndex: 2 }}>Engineer</th>
-              {weeks.map(w => <th key={w} style={{ ...hmTh, minWidth: '48px' }}>{formatWeekLabel(w)}</th>)}
+              {periods.map(p => <th key={p.key} style={{ ...hmTh, minWidth: viewPeriod === 'month' ? '56px' : '48px' }}>{p.label}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -421,16 +448,19 @@ function EngineerUtilizationHeatmap() {
                   <td style={{ ...hmTd, position: 'sticky', left: 0, background: 'var(--c-surface)', zIndex: 1, fontWeight: 510, color: 'var(--c-text-2)' }}>
                     <div>{eng.name.split(' ')[0]}</div>
                     <div style={{ fontSize: '10px', color: 'var(--c-text-4)' }}>
-                      {totalCap}h total · <span style={{ color: '#f59e0b88' }}>{bau}h BAU</span>
+                      {totalCap}h/wk · <span style={{ color: '#f59e0b88' }}>{bau}h BAU</span>
                     </div>
                   </td>
-                  {weeks.map(w => {
-                    const pct = getUtilPct(eng.id, w, totalCap, bau);
-                    const projectCommitted = getEngineerWeeklyCommitted(eng.id, w, assignments, 'all');
-                    const totalCommitted = projectCommitted + bau;
+                  {periods.map(p => {
+                    const weekCount = p.weeks.length;
+                    const pct = getUtilPct(eng.id, p.weeks, totalCap, bau);
+                    const projectCommitted = p.weeks.reduce((s, w) =>
+                      s + getEngineerWeeklyCommitted(eng.id, w, assignments, 'all'), 0);
+                    const totalCommitted = projectCommitted + bau * weekCount;
+                    const totalCapForPeriod = totalCap * weekCount;
                     return (
-                      <td key={w} style={{ ...hmTd, background: utilColor(pct), textAlign: 'center' }}
-                        title={`${eng.name}: ${projectCommitted}h project + ${bau}h BAU = ${totalCommitted}h / ${totalCap}h (${pct}%)`}>
+                      <td key={p.key} style={{ ...hmTd, background: utilColor(pct), textAlign: 'center' }}
+                        title={`${eng.name} ${p.label}: ${projectCommitted}h project + ${bau * weekCount}h BAU = ${totalCommitted}h / ${totalCapForPeriod}h (${pct}%)`}>
                         {pct > 0 ? <span style={{ fontSize: '10px', color: pct > 70 ? '#fff' : 'var(--c-text-2)', fontWeight: pct >= 100 ? 590 : 400 }}>{pct}%</span> : null}
                       </td>
                     );
@@ -457,7 +487,7 @@ function EngineerUtilizationHeatmap() {
   );
 }
 
-function EngineerProjectBreakdown() {
+function EngineerProjectBreakdown({ viewPeriod }: { viewPeriod: ViewPeriod }) {
   const { engineers, assignments, projects } = useStore();
 
   const weekSet = new Set<string>();
@@ -465,10 +495,14 @@ function EngineerProjectBreakdown() {
   const weeks = [...weekSet].sort().slice(0, 16);
   if (weeks.length === 0) return null;
 
+  const periods = getPeriods(weeks, viewPeriod);
   const activeEngineers = engineers.filter(e => e.isActive);
 
   return (
-    <ChartCard title="Project Breakdown by Engineer" subtitle="Hours assigned per project per week. BAU support shown separately.">
+    <ChartCard
+      title="Project Breakdown by Engineer"
+      subtitle={`Hours assigned per project per ${viewPeriod === 'month' ? 'month' : 'week'}. BAU support shown separately.`}
+    >
       {activeEngineers.map(eng => {
         const engAssignments = assignments.filter(a => a.engineerId === eng.id);
         const projectMap = new Map<string, { name: string; weeklyHours: Record<string, number> }>();
@@ -499,17 +533,17 @@ function EngineerProjectBreakdown() {
                 <thead>
                   <tr>
                     <th style={{ ...hmTh, textAlign: 'left', minWidth: '170px', color: 'var(--c-text-4)' }}>Project</th>
-                    {weeks.map(w => <th key={w} style={{ ...hmTh, minWidth: '44px' }}>{formatWeekLabel(w)}</th>)}
+                    {periods.map(p => <th key={p.key} style={{ ...hmTh, minWidth: viewPeriod === 'month' ? '56px' : '44px' }}>{p.label}</th>)}
                   </tr>
                 </thead>
                 <tbody>
                   {projectEntries.map(([projId, { name, weeklyHours }]) => (
                     <tr key={projId}>
                       <td style={{ ...hmTd, color: 'var(--c-text-3)', fontWeight: 510, paddingRight: '12px' }}>{name}</td>
-                      {weeks.map(w => {
-                        const h = weeklyHours[w] ?? 0;
+                      {periods.map(p => {
+                        const h = p.weeks.reduce((s, w) => s + (weeklyHours[w] ?? 0), 0);
                         return (
-                          <td key={w} style={{ ...hmTd, textAlign: 'center', color: h > 0 ? '#7170ff' : 'var(--c-border)' }}>
+                          <td key={p.key} style={{ ...hmTd, textAlign: 'center', color: h > 0 ? '#7170ff' : 'var(--c-border)' }}>
                             {h > 0 ? `${h}h` : '—'}
                           </td>
                         );
@@ -519,8 +553,10 @@ function EngineerProjectBreakdown() {
                   {bau > 0 && (
                     <tr>
                       <td style={{ ...hmTd, color: '#f59e0b', fontWeight: 590, paddingRight: '12px' }}>BAU Support</td>
-                      {weeks.map(w => (
-                        <td key={w} style={{ ...hmTd, textAlign: 'center', color: '#f59e0b88' }}>{bau}h</td>
+                      {periods.map(p => (
+                        <td key={p.key} style={{ ...hmTd, textAlign: 'center', color: '#f59e0b88' }}>
+                          {bau * p.weeks.length}h
+                        </td>
                       ))}
                     </tr>
                   )}
@@ -556,6 +592,7 @@ function ChartCard({ title, subtitle, children }: { title: string; subtitle: str
 export default function ResourceLoad() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'overview' | 'theme' | 'skill' | 'engineers'>('overview');
+  const [viewPeriod, setViewPeriod] = useState<ViewPeriod>('week');
 
   return (
     <div>
@@ -565,32 +602,50 @@ export default function ResourceLoad() {
         <p style={sub}>Visualise engineering capacity, demand, and utilisation across themes and time.</p>
       </div>
 
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '1px solid var(--c-border)' }}>
-        {([
-          { key: 'overview', label: 'Overview' },
-          { key: 'theme', label: 'By Theme' },
-          { key: 'skill', label: 'By Skill' },
-          { key: 'engineers', label: 'By Engineer' },
-        ] as const).map(t => (
-          <button key={t.key} onClick={() => setActiveTab(t.key)} style={{
-            background: 'none', border: 'none',
-            borderBottom: `2px solid ${activeTab === t.key ? '#7170ff' : 'transparent'}`,
-            color: activeTab === t.key ? 'var(--c-text-1)' : 'var(--c-text-3)',
-            fontSize: '13px', fontWeight: 510,
-            padding: '8px 16px', cursor: 'pointer', marginBottom: '-1px',
-          }}>
-            {t.label}
-          </button>
-        ))}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px', borderBottom: '1px solid var(--c-border)' }}>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          {([
+            { key: 'overview', label: 'Overview' },
+            { key: 'theme', label: 'By Theme' },
+            { key: 'skill', label: 'By Skill' },
+            { key: 'engineers', label: 'By Engineer' },
+          ] as const).map(t => (
+            <button key={t.key} onClick={() => setActiveTab(t.key)} style={{
+              background: 'none', border: 'none',
+              borderBottom: `2px solid ${activeTab === t.key ? '#7170ff' : 'transparent'}`,
+              color: activeTab === t.key ? 'var(--c-text-1)' : 'var(--c-text-3)',
+              fontSize: '13px', fontWeight: 510,
+              padding: '8px 16px', cursor: 'pointer', marginBottom: '-1px',
+            }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Period toggle */}
+        <div style={{ display: 'flex', gap: '4px', paddingBottom: '10px' }}>
+          {(['week', 'month'] as ViewPeriod[]).map(vp => (
+            <button key={vp} onClick={() => setViewPeriod(vp)} style={{
+              background: viewPeriod === vp ? 'rgba(94,106,210,0.2)' : 'var(--c-card-hover)',
+              border: `1px solid ${viewPeriod === vp ? 'rgba(94,106,210,0.5)' : 'var(--c-border)'}`,
+              borderRadius: '5px',
+              color: viewPeriod === vp ? '#7170ff' : 'var(--c-text-3)',
+              fontSize: '12px', fontWeight: 510,
+              padding: '4px 12px', cursor: 'pointer',
+            }}>
+              {vp === 'week' ? 'Weekly' : 'Monthly'}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {activeTab === 'overview' && <OverallCapacityDemandChart />}
-      {activeTab === 'theme' && <ThemeCapacityChart />}
-      {activeTab === 'skill' && <SkillDemandView />}
+      {activeTab === 'overview' && <OverallCapacityDemandChart viewPeriod={viewPeriod} />}
+      {activeTab === 'theme' && <ThemeCapacityChart viewPeriod={viewPeriod} />}
+      {activeTab === 'skill' && <SkillDemandView viewPeriod={viewPeriod} />}
       {activeTab === 'engineers' && (
         <>
-          <EngineerUtilizationHeatmap />
-          <EngineerProjectBreakdown />
+          <EngineerUtilizationHeatmap viewPeriod={viewPeriod} />
+          <EngineerProjectBreakdown viewPeriod={viewPeriod} />
         </>
       )}
     </div>

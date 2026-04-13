@@ -23,3 +23,13 @@ export function formatDateRange(startDate: string, endDate: string): string {
 export function genId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
+
+export function groupWeeksByMonth(weeks: string[]): { key: string; label: string; weeks: string[] }[] {
+  const groups = new Map<string, string[]>();
+  weeks.forEach(w => {
+    const key = format(parseISO(w), "MMM ''yy");
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(w);
+  });
+  return [...groups.entries()].map(([key, ws]) => ({ key, label: key, weeks: ws }));
+}
