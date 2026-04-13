@@ -189,6 +189,195 @@ function ThemeCapacityChart() {
   );
 }
 
+// ─── By Skill ────────────────────────────────────────────────────────────────
+
+function SkillDemandView() {
+  const { skills, themes, demandRows, assignments, projects, engineers } = useStore();
+
+  const RELEVANT = new Set(['submitted', 'under_review', 'pending_approval', 'approved']);
+  const activeProjectIds = new Set(projects.filter(p => RELEVANT.has(p.status)).map(p => p.id));
+  const activeDemandRows = demandRows.filter(r => activeProjectIds.has(r.projectId));
+
+  const weekSet = new Set<string>();
+  activeDemandRows.forEach(r => r.weeklyHours.forEach(wh => { if (wh.hours > 0) weekSet.add(wh.weekCommencing); }));
+  const weeks = [...weekSet].sort();
+
+  if (weeks.length === 0) {
+    return (
+      <ChartCard title="Skill Demand vs Committed" subtitle="No submitted demand found.">
+        <div style={{ fontSize: '13px', color: 'var(--c-text-4)', padding: '16px 0' }}>
+          No projects with submitted or approved demand exist yet.
+        </div>
+      </ChartCard>
+    );
+  }
+
+  const skillsWithDemand = skills.filter(s => activeDemandRows.some(r => r.skillId === s.id));
+
+  function getDemand(skillId: string, week: string): number {
+    return activeDemandRows
+      .filter(r => r.skillId === skillId)
+      .reduce((s, r) => s + (r.weeklyHours.find(wh => wh.weekCommencing === week)?.hours ?? 0), 0);
+  }
+
+  function getCommitted(skillId: string, week: string): number {
+    return assignments
+      .filter(a => a.status === 'locked')
+      .reduce((s, a) => {
+        const dr = demandRows.find(r => r.id === a.demandRowId && r.skillId === skillId);
+        if (!dr) return s;
+        return s + (a.weeklyHours.find(wh => wh.weekCommencing === week)?.hours ?? 0);
+      }, 0);
+  }
+
+  function cellBg(demand: number, committed: number): string {
+    if (demand === 0) return 'transparent';
+    const gap = demand - committed;
+    if (gap <= 0) return 'rgba(39,166,68,0.15)';
+    if (gap / demand < 0.5) return 'rgba(245,158,11,0.18)';
+    return 'rgba(239,68,68,0.18)';
+  }
+
+  // Summary — sorted by total gap descending
+  const summary = skillsWithDemand.map(s => {
+    const theme = themes.find(t => t.id === s.themeId);
+    const totalDemand = weeks.reduce((sum, w) => sum + getDemand(s.id, w), 0);
+    const totalCommitted = weeks.reduce((sum, w) => sum + getCommitted(s.id, w), 0);
+    const gap = Math.max(0, totalDemand - totalCommitted);
+    const demandWeeks = weeks.filter(w => getDemand(s.id, w) > 0);
+    const peakGapWeek = demandWeeks.length > 0
+      ? demandWeeks.reduce((best, w) => {
+          const g = getDemand(s.id, w) - getCommitted(s.id, w);
+          const bg = getDemand(s.id, best) - getCommitted(s.id, best);
+          return g > bg ? w : best;
+        }, demandWeeks[0])
+      : null;
+    const qualifiedCount = engineers.filter(e => e.isActive && e.skills.some(es => es.skillId === s.id)).length;
+    return { skill: s, theme, totalDemand, totalCommitted, gap, peakGapWeek, qualifiedCount };
+  }).sort((a, b) => b.gap - a.gap);
+
+  return (
+    <div>
+      {/* Heatmap */}
+      <ChartCard
+        title="Skill Demand vs Committed — Timeline"
+        subtitle="Demand from all submitted/approved projects vs locked commitments. Shows demand / ✓committed / −gap per week."
+      >
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ borderCollapse: 'collapse', fontSize: '11px' }}>
+            <thead>
+              <tr>
+                <th style={{ ...hmTh, textAlign: 'left', minWidth: '160px', position: 'sticky', left: 0, background: 'var(--c-surface)', zIndex: 2 }}>
+                  Skill
+                </th>
+                {weeks.map(w => (
+                  <th key={w} style={{ ...hmTh, minWidth: '60px' }}>{formatWeekLabel(w)}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {skillsWithDemand.map(skill => {
+                const theme = themes.find(t => t.id === skill.themeId);
+                return (
+                  <tr key={skill.id}>
+                    <td style={{ ...hmTd, position: 'sticky', left: 0, background: 'var(--c-surface)', zIndex: 1 }}>
+                      <div style={{ fontWeight: 510, color: 'var(--c-text-2)', fontSize: '12px' }}>{skill.name}</div>
+                      <div style={{ fontSize: '10px', color: 'var(--c-text-4)' }}>{theme?.name}</div>
+                    </td>
+                    {weeks.map(w => {
+                      const demand = getDemand(skill.id, w);
+                      const committed = getCommitted(skill.id, w);
+                      const gap = demand - committed;
+                      return (
+                        <td
+                          key={w}
+                          style={{ ...hmTd, background: cellBg(demand, committed), textAlign: 'center', padding: '5px 4px' }}
+                          title={demand > 0 ? `${skill.name} w/c ${w}: ${demand}h demand, ${committed}h committed${gap > 0 ? `, ${gap}h gap` : ', covered'}` : undefined}
+                        >
+                          {demand > 0 ? (
+                            <div style={{ lineHeight: 1.4 }}>
+                              <div style={{ color: 'var(--c-text-2)', fontWeight: gap > 0 ? 590 : 400, fontSize: '11px' }}>{demand}h</div>
+                              {committed > 0 && <div style={{ color: '#4ade80', fontSize: '9px' }}>✓{committed}h</div>}
+                              {gap > 0 && <div style={{ color: '#f87171', fontSize: '9px', fontWeight: 590 }}>−{gap}h</div>}
+                            </div>
+                          ) : (
+                            <span style={{ color: 'var(--c-border-lg)', fontSize: '10px' }}>—</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ display: 'flex', gap: '14px', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--c-border-sm)', flexWrap: 'wrap' }}>
+          {[
+            { color: 'rgba(39,166,68,0.15)', label: 'Covered — committed meets demand' },
+            { color: 'rgba(245,158,11,0.18)', label: 'Partial gap — < 50% unfilled' },
+            { color: 'rgba(239,68,68,0.18)', label: 'Significant gap — ≥ 50% unfilled' },
+          ].map(({ color, label }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: color, border: '1px solid var(--c-border)' }} />
+              <span style={{ fontSize: '11px', color: 'var(--c-text-4)' }}>{label}</span>
+            </div>
+          ))}
+        </div>
+      </ChartCard>
+
+      {/* Risk summary */}
+      <ChartCard
+        title="Skill Risk Summary"
+        subtitle="Skills ranked by total unfilled gap. Demand includes all submitted, under review, pending approval, and approved projects."
+      >
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '12px' }}>
+            <thead>
+              <tr>
+                {[
+                  { label: 'Skill', align: 'left' },
+                  { label: 'Theme', align: 'left' },
+                  { label: 'Total Demand', align: 'center' },
+                  { label: 'Committed', align: 'center' },
+                  { label: 'Gap', align: 'center' },
+                  { label: 'Peak Gap Week', align: 'center' },
+                  { label: 'Qualified Engineers', align: 'center' },
+                ].map(({ label, align }) => (
+                  <th key={label} style={{ ...hmTh, textAlign: align as React.CSSProperties['textAlign'] }}>{label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {summary.map(({ skill, theme, totalDemand, totalCommitted, gap, peakGapWeek, qualifiedCount }) => {
+                const gapRatio = totalDemand > 0 ? gap / totalDemand : 0;
+                const gapColor = gap === 0 ? '#4ade80' : gapRatio < 0.5 ? '#f59e0b' : '#f87171';
+                return (
+                  <tr key={skill.id}>
+                    <td style={{ ...hmTd, fontWeight: 510, color: 'var(--c-text-2)' }}>{skill.name}</td>
+                    <td style={{ ...hmTd, color: 'var(--c-text-4)' }}>{theme?.name ?? '—'}</td>
+                    <td style={{ ...hmTd, textAlign: 'center', color: 'var(--c-text-2)' }}>{totalDemand}h</td>
+                    <td style={{ ...hmTd, textAlign: 'center', color: 'var(--c-text-3)' }}>{totalCommitted}h</td>
+                    <td style={{ ...hmTd, textAlign: 'center', fontWeight: gap > 0 ? 590 : 400, color: gapColor }}>
+                      {gap === 0 ? '✓ Covered' : `−${gap}h`}
+                    </td>
+                    <td style={{ ...hmTd, textAlign: 'center', color: 'var(--c-text-4)' }}>
+                      {peakGapWeek && gap > 0 ? formatWeekLabel(peakGapWeek) : '—'}
+                    </td>
+                    <td style={{ ...hmTd, textAlign: 'center', color: qualifiedCount === 0 ? '#f87171' : 'var(--c-text-3)' }}>
+                      {qualifiedCount}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </ChartCard>
+    </div>
+  );
+}
+
 // ─── By Engineer ─────────────────────────────────────────────────────────────
 
 function EngineerUtilizationHeatmap() {
@@ -366,7 +555,7 @@ function ChartCard({ title, subtitle, children }: { title: string; subtitle: str
 
 export default function ResourceLoad() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'overview' | 'theme' | 'engineers'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'theme' | 'skill' | 'engineers'>('overview');
 
   return (
     <div>
@@ -380,6 +569,7 @@ export default function ResourceLoad() {
         {([
           { key: 'overview', label: 'Overview' },
           { key: 'theme', label: 'By Theme' },
+          { key: 'skill', label: 'By Skill' },
           { key: 'engineers', label: 'By Engineer' },
         ] as const).map(t => (
           <button key={t.key} onClick={() => setActiveTab(t.key)} style={{
@@ -396,6 +586,7 @@ export default function ResourceLoad() {
 
       {activeTab === 'overview' && <OverallCapacityDemandChart />}
       {activeTab === 'theme' && <ThemeCapacityChart />}
+      {activeTab === 'skill' && <SkillDemandView />}
       {activeTab === 'engineers' && (
         <>
           <EngineerUtilizationHeatmap />
